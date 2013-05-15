@@ -40,7 +40,7 @@ lemma "reduces1 (m_Force (v_Thunk m)) m"
   apply (rule rtranclp.rtrancl_refl)
 done
 
-lemma frameApp [code_pred_intro]: "reduce m m' \<Longrightarrow> reduce (m_App m v) (m_App m' v)"
+lemma frameApp: "reduce m m' \<Longrightarrow> reduce (m_App m v) (m_App m' v)"
 proof -
   assume "reduce m m'"
   hence "reduce (appctx_C_m (C_App v) m) (appctx_C_m (C_App v) m')" apply (rule frameI) done
