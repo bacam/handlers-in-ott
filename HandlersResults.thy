@@ -188,7 +188,7 @@ lemma runStateComp: "reduces1 (outer (runState comp)) expectedResult"
   apply (simp add: expectedResult_def)
 done
 
-lemma altFrameI [code_pred_intro]: "\<lbrakk>reduce (m) (m')\<rbrakk> \<Longrightarrow>
+lemma altFrameI: "\<lbrakk>reduce (m) (m')\<rbrakk> \<Longrightarrow>
   ind_appctx_C_m  C   m m1  \<Longrightarrow>
   ind_appctx_C_m  C   m' m2 \<Longrightarrow>
   reduce m1 m2"
@@ -202,7 +202,7 @@ proof -
   from 1 4 5 frameI show ?thesis by simp
 qed
 
-lemma altHoistopI [code_pred_intro]: "\<lbrakk> \<not> (x : set (fv_H  H )) \<rbrakk> \<Longrightarrow>
+lemma altHoistopI: "\<lbrakk> \<not> (x : set (fv_H  H )) \<rbrakk> \<Longrightarrow>
   ind_appctx_H_m  H (m_Op oper v x m) m1  \<Longrightarrow>
   ind_appctx_H_m  H m m2 \<Longrightarrow>
 reduce m1 (m_Op oper v x m2)"
@@ -217,36 +217,38 @@ qed
 
 lemmas [code_pred_intro] =
   betatimesI betapluslI betaplusrI betaUI betaFI betaAppI betaAmpLI betaAmpRI
-  handleFI handleOpI
+  handleFI handleOpI altFrameI altHoistopI
 
-code_pred hreturns .
-code_pred hfor .
-code_pred (modes: i \<Rightarrow> o \<Rightarrow> bool as step) reduce
-proof -
-  case reduce
-  from this show thesis sorry
-qed
+code_pred (modes: i \<Rightarrow> o \<Rightarrow> o \<Rightarrow> bool) hreturns .
+code_pred (modes: i \<Rightarrow> i \<Rightarrow> o \<Rightarrow> o \<Rightarrow> o \<Rightarrow> bool) hfor .
+code_pred (modes: i \<Rightarrow> o \<Rightarrow> bool) reduce
+  apply (induct rule: reduce.cases)
+  apply (metis)+
+  apply (metis H.exhaust appctx_H_m.simps ind_appctx_H_m.intros)
+  apply (metis)+
+  apply (metis C.exhaust appctx_C_m.simps ind_appctx_C_m.intros)
+done
 
+export_code reduce_i_o in SML file -
+
+value "Predicate.the (reduce_i_o (outer (runState comp)))"
 values "{m. reduce (outer (runState comp)) m}"
 
 inductive reduces :: "m \<Rightarrow> m \<Rightarrow> bool" where
   "\<not>(\<exists>m'. reduce m m') \<Longrightarrow> reduces m m"
 | "reduce m m' \<Longrightarrow> reduces m' m'' \<Longrightarrow> reduces m m''"
 
-code_pred (modes: i \<Rightarrow> o \<Rightarrow> bool)  [inductify] reduces .
-thm reduces.equation
+code_pred (modes: i \<Rightarrow> o \<Rightarrow> bool) [inductify] reduces .
 
 values "{m. reduce (m_Force (v_Thunk (m_Force v_Unit))) m}"
 values "{m. reduces (m_Force (v_Thunk (m_Force v_Unit))) m}"
 values "{m. reduce^** (m_Force (v_Thunk (m_Force v_Unit))) m}"
 
-export_code step in SML file -
-export_code reduces_i_o in SML file -
+export_code reduces_i_o outer runState comp Predicate.the in SML file -
 
-(* Too expensive?!
-declare [[values_timeout = 1200]]
+value "Predicate.the (reduces_i_o (outer (runState comp)))"
+
 values "{m. reduce^** (outer (runState comp)) m}"
-*)
 
 end
 
