@@ -219,8 +219,8 @@ lemmas [code_pred_intro] =
   betatimesI betapluslI betaplusrI betaUI betaFI betaAppI betaAmpLI betaAmpRI
   handleFI handleOpI altFrameI altHoistopI
 
-code_pred (modes: i \<Rightarrow> o \<Rightarrow> o \<Rightarrow> bool) hreturns .
-code_pred (modes: i \<Rightarrow> i \<Rightarrow> o \<Rightarrow> o \<Rightarrow> o \<Rightarrow> bool) hfor .
+code_pred hreturns .
+code_pred hfor .
 code_pred (modes: i \<Rightarrow> o \<Rightarrow> bool) reduce
   apply (induct rule: reduce.cases)
   apply (metis)+
