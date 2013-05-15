@@ -1,0 +1,183 @@
+embed {{ coq Require String. }}
+
+metavar termvar, x, p, k ::=
+  {{ ocaml string }} {{ isa string }} {{ isavar ''[[termvar]]'' }} {{ coq String.string }} {{ lex alphanum }}
+% careful now, Isabelle 2011 doesn't seem to like op as the type name
+metavar oper ::= 
+  {{ ocaml string }} {{ isa string }} {{ isavar ''[[oper]]'' }} {{ coq String.string }} {{ lex alphanum }}
+
+embed {{ coq
+  Definition eq_termvar := String.string_dec.
+  Definition eq_oper := String.string_dec.
+}}
+
+% Can I use numbers for left/right?
+
+% Something bad is happening with the substitution function generation for
+% Isabelle - when I union binders (or even if I give them separately) it
+% generates x : set [y] @ [z] (for y,z bound), but I need to add parentheses
+% for Isabelle 2011 to accept it.
+
+grammar
+v :: 'v_' ::=  {{ com values }}
+  | x           :: :: Var
+  | ()          :: :: Unit
+  | ( v1 , v2 ) :: :: Pair
+  | inl v       :: :: InL
+  | inr v       :: :: InR
+  | { m }       :: :: Thunk
+%  | ( v )       ::S:: ParenV
+
+m :: 'm_' ::=  {{ com computations }}
+  | split ( v , x1 , x2 , m )      ::  :: PairElim (+ bind x1 union x2 in m +)
+  | case ( v )                     ::  :: UnitElim
+  | case ( v , x1 , m1 , x2 , m2 ) ::  :: SumElim (+ bind x1 in m1 bind x2 in m2 +)
+  | v !                            ::  :: Force
+  | return v                       ::  :: Return
+  | let x <- m in m'               ::  :: Let (+ bind x in m' +)
+  | \ x . m                        ::  :: Lambda (+ bind x in m +)
+  | m v                            ::  :: App
+  | < m1 , m2 >                    ::  :: CPair
+  | prjl m                         ::  :: ProjL
+  | prjr m                         ::  :: ProjR
+  | oper v ( \ x . m )             ::  :: Op (+ bind x in m +)
+  | handle m with h                ::  :: Handle
+  | ( m )                          :: S:: ParenS   {{ icho [[m]] }}
+  | m [ v / x ]                    :: M:: Msub     {{ icho (subst_m [[v]] [[x]] [[m]]) }}
+  | H . m                          :: M:: MctxH    {{ icho (appctx_H_m [[H]] [[m]]) }}
+  | C . m                          :: M:: MctxC    {{ icho (appctx_C_m [[C]] [[m]]) }}
+
+% Can I make it a proper set rather than a list?
+h :: 'h_' ::=  {{ com handlers }}
+  | { return x -> m }       ::  :: Return (+ bind x in m +)
+  | h + { oper p k -> m }   ::  :: Handler (+ bind p union k in m +)
+
+H :: 'H_' ::=
+  | let x <- __ in m  :: :: Let (+ bind x in m +)
+  | __ v              :: :: App
+  | prjl __           :: :: ProjL
+  | prjr __           :: :: ProjR
+
+% Can I avoid duplicating H?
+C :: 'C_' ::=
+  | let x <- __ in m  :: :: Let (+ bind x in m +)
+  | __ v              :: :: App
+  | prjl __           :: :: ProjL
+  | prjr __           :: :: ProjR
+  | handle __ with h  :: :: Handle
+
+terminals :: 'terminals_' ::=
+  | \         :: :: lambda  {{ tex \lambda }}
+  | ->        :: :: rarr    {{ tex \rightarrow }}
+  | <-        :: :: larr    {{ tex \leftarrow }}
+  | -->       :: :: red     {{ tex \longrightarrow }}
+
+formula :: formula_ ::=
+  | judgement ::  :: judgement
+  | x not in fv ( H ) :: :: notinfv
+      {{ coq not (In x (fv_H [[H]])) }}
+      {{ isa \<not> (x : set (fv_H [[H]])) }}
+  | x not in fv ( h ) :: :: notinfvh
+      {{ coq not (In x (fv_h [[h]])) }}
+      {{ isa \<not> (x : set (fv_h [[h]])) }}
+
+contextrules
+  H _:: m :: m
+  C _:: m :: m
+
+% Same problem as freevars - need to ask for v x to get m x
+substitutions
+  single v x :: subst
+
+% Seems that you have to mention the non-terminal that x appears in to
+% generate the free variables functions, even if you want one further out
+% (i.e., I want a function for H, but need to ask for one for v)
+freevars
+  v x :: fv
+  m x :: fv
+  H x :: fv
+  h x :: fv
+
+% Don't try to use "funs" to give you definitions for terms unless you add a
+% throwaway parameter - it'll generate bad output.
+
+% Hmm... if I make these projection relations return a lambda term
+% (\x.m or \p k.m) ott just seems to quietly ignore it.
+
+defns
+ProjReturn :: '' ::=
+
+ defn
+ h Returns x m :: ::hreturns::'' by
+
+   ------------------------------ :: hReturns1
+   { return x -> m } Returns x m
+
+   h Returns x m
+   ---------------------------------- :: hReturns2
+   h + {oper p k -> m'} Returns x m
+
+defns
+ProjOp :: '' ::=
+
+ defn
+ h For oper p k m :: ::hfor::'' by
+
+   -------------------------------------- :: hFor1
+   h + {oper p k -> m} For oper p k m
+
+   h For oper p k m
+   -------------------------------------- :: hFor2
+   h + {oper' p' k' -> m'} For oper p k m
+
+defns
+Jop :: '' ::=
+
+ defn
+ m --> m' :: ::reduce::'' by
+
+   ------------------------------------------ :: betatimes
+   split((v1,v2),x1,x2,m) --> m[v1/x1][v2/x2]
+
+   ------------------------------------ :: betaplusl
+   case(inl v,x1,m1,x2,m2) --> m1[v/x1]
+
+   ------------------------------------ :: betaplusr
+   case(inr v,x1,m1,x2,m2) --> m2[v/x2]
+
+   ---------- :: betaU
+   {m}! --> m
+
+   --------------------------------- :: betaF
+   let x <- return v in m --> m[v/x]
+
+   ------------------- :: betaApp
+   (\x.m) v --> m[v/x]
+
+   ------------------- :: betaAmpL
+   prjl <m1,m2> --> m1
+
+   ------------------- :: betaAmpR
+   prjr <m1,m2> --> m2
+
+% I hoped I could drop the free variable restriction, but the frame rule means
+% that we're not necessarily dealing with closed terms
+% e.g.   let x <- handle let y <- oper v (\x.x) in x with h in m
+%       -/-> let x <- handle oper v (\x. let y <- x in x) with h in m
+   x not in fv(H)
+   ------------------------------------- :: hoistop
+   H.(oper v (\x.m)) --> oper v (\x.H.m)
+
+   h Returns x m
+   ----------------------------------- :: handleF
+   handle (return v) with h --> m[v/x]
+
+   x not in fv(h)
+   h For oper p k m'
+   ---------------------------------------------------------------- :: handleOp
+   handle oper v (\x. m) with h --> m'[v/p][{\x.handle m with h}/k]
+
+   m --> m'
+   ------------ :: frame
+   C.m --> C.m'
+

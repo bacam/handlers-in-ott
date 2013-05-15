@@ -1,0 +1,34 @@
+Require String.
+Require Import Handlers.
+Open Scope string_scope.
+
+(* Hack: there's no coqvars, so define values for coq vars
+   use xx instead of x to avoid any confusion,
+   although :concrete: should get over that
+  *)
+
+Definition get := "get".
+Definition put := "put".
+
+Definition xx := "xx".
+Definition uu := "uu".
+Definition yy := "yy".
+Definition uu' := "uu'".
+Definition zz := "zz".
+
+Definition kk := "kk".
+Definition xxx := "xxx".
+Definition st := "st".
+
+Definition comp := [[ get () (\xx. put inl xx (\uu. get () (\yy. put (xx,yy) (\uu'. get () (\zz. return zz))))) ]].
+Definition runState := fun m => [[ handle m with { return xxx -> \st. (xxx,st)! } + { get xxx kk -> \st. ((kk! st) st) } + { put xxx kk -> \st. ((kk! ()) xxx) } ]].
+
+Definition outer := fun m => [[ m inr () ]].
+
+
+Inductive reds : m -> m -> Prop :=
+| r_zero : forall m, reds m m
+| r_step : forall m1 m2 m3, reduce m1 m2 -> reds m2 m3 -> reds m1 m3.
+
+Definition expectedResult := [[ ((inr (), inl inr ()) , (inr (), inl inr ()))! ]].
+

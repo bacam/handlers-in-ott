@@ -1,0 +1,27 @@
+theory HandlersEx
+imports Main Handlers
+begin
+
+definition comp :: m where
+  "comp \<equiv> [[
+     get () (\xx.
+     put inl xx (\uu.
+     get () (\yy.
+     put (xx,yy) (\uuu.
+     get () (\zz.
+     return zz))))) ]]"
+
+definition runState :: "m \<Rightarrow> m" where
+  "runState \<equiv> \<lambda>m. [[
+     handle m with
+       { return xxx -> \st. (xxx,st)! }
+     + { get xxx kk -> \st. ((kk! st) st) }
+     + { put xxx kk -> \st. ((kk! ()) xxx) } ]]"
+
+definition outer :: "m \<Rightarrow> m" where
+  "outer \<equiv> \<lambda>m. [[ m inr () ]]"
+
+definition expectedResult :: m where
+  "expectedResult \<equiv> [[ ((inr (), inl inr ()) , (inr (), inl inr ()))! ]]"
+
+end
