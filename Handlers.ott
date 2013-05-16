@@ -45,7 +45,7 @@ m :: 'm_' ::=  {{ com computations }}
   | ( m )                          :: S:: ParenS   {{ icho [[m]] }}
   | m [ v / x ]                    :: M:: Msub     {{ icho (subst_m [[v]] [[x]] [[m]]) }}
   | H . m                          :: M:: MctxH    {{ icho (appctx_H_m [[H]] [[m]]) }}
-  | C . m                          :: M:: MctxC    {{ icho (appctx_C_m [[C]] [[m]]) }}
+  | CC . m                         :: M:: MctxC    {{ icho (appctx_CC_m [[CC]] [[m]]) }}
 
 % Can I make it a proper set rather than a list?
 h :: 'h_' ::=  {{ com handlers }}
@@ -59,7 +59,7 @@ H :: 'H_' ::=
   | prjr __           :: :: ProjR
 
 % Can I avoid duplicating H?
-C :: 'C_' ::=
+CC :: 'CC_' ::=
   | let x <- __ in m  :: :: Let (+ bind x in m +)
   | __ v              :: :: App
   | prjl __           :: :: ProjL
@@ -83,7 +83,7 @@ formula :: formula_ ::=
 
 contextrules
   H _:: m :: m
-  C _:: m :: m
+  CC _:: m :: m
 
 % Same problem as freevars - need to ask for v x to get m x
 substitutions
@@ -178,6 +178,6 @@ Jop :: '' ::=
    handle oper v (\x. m) with h --> m'[v/p][{\x.handle m with h}/k]
 
    m --> m'
-   ------------ :: frame
-   C.m --> C.m'
+   -------------- :: frame
+   CC.m --> CC.m'
 

@@ -16,16 +16,16 @@ apply simp_all
 done
 
 inductive
-ind_appctx_C_m :: "C => m => m => bool"
+ind_appctx_CC_m :: "CC => m => m => bool"
 where
-"ind_appctx_C_m (C_Let x m) m5 ((m_Let x m5 m))"
-| "ind_appctx_C_m (C_App v) m5 ((m_App m5 v))"
-| "ind_appctx_C_m C_ProjL m5 ((m_ProjL m5))"
-| "ind_appctx_C_m C_ProjR m5 ((m_ProjR m5))"
-| "ind_appctx_C_m (C_Handle h) m5 ((m_Handle m5 h))"
+"ind_appctx_CC_m (CC_Let x m) m5 ((m_Let x m5 m))"
+| "ind_appctx_CC_m (CC_App v) m5 ((m_App m5 v))"
+| "ind_appctx_CC_m CC_ProjL m5 ((m_ProjL m5))"
+| "ind_appctx_CC_m CC_ProjR m5 ((m_ProjR m5))"
+| "ind_appctx_CC_m (CC_Handle h) m5 ((m_Handle m5 h))"
 
-lemma altC: "ind_appctx_C_m C m m' \<Longrightarrow> m' = appctx_C_m C m"
-apply (induct rule: ind_appctx_C_m.induct)
+lemma altC: "ind_appctx_CC_m CC m m' \<Longrightarrow> m' = appctx_CC_m CC m"
+apply (induct rule: ind_appctx_CC_m.induct)
 apply simp_all
 done
 
@@ -43,7 +43,7 @@ done
 lemma frameApp: "reduce m m' \<Longrightarrow> reduce (m_App m v) (m_App m' v)"
 proof -
   assume "reduce m m'"
-  hence "reduce (appctx_C_m (C_App v) m) (appctx_C_m (C_App v) m')" apply (rule frameI) done
+  hence "reduce (appctx_CC_m (CC_App v) m) (appctx_CC_m (CC_App v) m')" apply (rule frameI) done
   thus "reduce (m_App m v) (m_App m' v)" by simp
 qed
 
@@ -189,16 +189,16 @@ lemma runStateComp: "reduces1 (outer (runState comp)) expectedResult"
 done
 
 lemma altFrameI: "\<lbrakk>reduce (m) (m')\<rbrakk> \<Longrightarrow>
-  ind_appctx_C_m  C   m m1  \<Longrightarrow>
-  ind_appctx_C_m  C   m' m2 \<Longrightarrow>
+  ind_appctx_CC_m CC m m1  \<Longrightarrow>
+  ind_appctx_CC_m CC m' m2 \<Longrightarrow>
   reduce m1 m2"
 proof -
   (* TODO: I should be able to name these above? *)
   assume 1: "reduce (m) (m')"
-  assume 2: "ind_appctx_C_m  C m m1"
-  assume 3: "ind_appctx_C_m  C   m' m2"
-  from 2 have 4: "m1 = appctx_C_m C m" by (rule altC)
-  from 3 have 5: "m2 = appctx_C_m C m'" by (rule altC)
+  assume 2: "ind_appctx_CC_m CC m m1"
+  assume 3: "ind_appctx_CC_m CC m' m2"
+  from 2 have 4: "m1 = appctx_CC_m CC m" by (rule altC)
+  from 3 have 5: "m2 = appctx_CC_m CC m'" by (rule altC)
   from 1 4 5 frameI show ?thesis by simp
 qed
 
@@ -226,7 +226,7 @@ code_pred (modes: i \<Rightarrow> o \<Rightarrow> bool) reduce
   apply (metis)+
   apply (metis H.exhaust appctx_H_m.simps ind_appctx_H_m.intros)
   apply (metis)+
-  apply (metis C.exhaust appctx_C_m.simps ind_appctx_C_m.intros)
+  apply (metis CC.exhaust appctx_CC_m.simps ind_appctx_CC_m.intros)
 done
 
 export_code reduce_i_o in SML file -

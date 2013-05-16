@@ -1,0 +1,25 @@
+indexvar index, n ::= {{ isa num }} {{ coq nat }} {{ hol num }}
+
+grammar
+A,B :: 'vt_' ::= {{ com value types }}
+  | 1       :: :: Unit
+  | A1 * A2 :: :: Pair
+  | 0       :: :: Empty
+  | A1 + A2 :: :: Sum
+  | U E C   :: :: Thunk
+
+C :: 'ct_' ::= {{ com computation types }}
+  | F A     :: :: ValueReturning
+  | A -> C  :: :: Function
+  | TT      :: :: Unit
+  | C1 & C2 :: :: Pair
+
+E :: 'ef_' ::= {{ com effect signatures }}
+  | { oper : A -> B } + E  :: :: Oper
+  | 0                      :: :: Nil
+
+R :: 'r_' ::= {{ com handlers }}
+  | A E => E' C :: :: Handler
+
+G :: 'env_' ::= {{ com environments }}
+  | x1 : A1 , .. , xn : An :: :: Env
