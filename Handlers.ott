@@ -30,13 +30,15 @@ v :: 'v_' ::=  {{ com values }}
 
 m :: 'm_' ::=  {{ com computations }}
   | split ( v , x1 , x2 , m )      ::  :: PairElim (+ bind x1 union x2 in m +)
-  | case ( v )                     ::  :: UnitElim
+  | case0 ( v )                    ::  :: NilElim
+% Should be x1.m1?
   | case ( v , x1 , m1 , x2 , m2 ) ::  :: SumElim (+ bind x1 in m1 bind x2 in m2 +)
   | v !                            ::  :: Force
   | return v                       ::  :: Return
   | let x <- m in m'               ::  :: Let (+ bind x in m' +)
   | \ x . m                        ::  :: Lambda (+ bind x in m +)
   | m v                            ::  :: App
+  | < >                            ::  :: Unit
   | < m1 , m2 >                    ::  :: CPair
   | prjl m                         ::  :: ProjL
   | prjr m                         ::  :: ProjR
