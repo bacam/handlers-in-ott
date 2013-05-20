@@ -14,9 +14,9 @@ definition comp :: m where
 definition runState :: "m \<Rightarrow> m" where
   "runState \<equiv> \<lambda>m. [[
      handle m with
-       { return xxx -> \st. (xxx,st)! }
-     + { get xxx kk -> \st. ((kk! st) st) }
-     + { put xxx kk -> \st. ((kk! ()) xxx) } ]]"
+       { return xxx -> \st. (xxx,st)!
+       | get xxx kk -> \st. ((kk! st) st)
+       | put xxx kk -> \st. ((kk! ()) xxx) } ]]"
 
 definition outer :: "m \<Rightarrow> m" where
   "outer \<equiv> \<lambda>m. [[ m inr () ]]"

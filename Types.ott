@@ -1,4 +1,3 @@
-indexvar index, n ::= {{ isa num }} {{ coq nat }} {{ hol num }}
 
 grammar
 A,B :: 'vt_' ::= {{ com value types }}

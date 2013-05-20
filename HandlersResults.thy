@@ -54,7 +54,7 @@ lemma runStateComp: "reduces1 (outer (runState comp)) expectedResult"
     apply (rule frameApp)
     apply (rule handleOpI)
       apply simp
-      apply (rule hFor2I)  apply (rule hFor1I)
+      apply (rule_tac i="1" in hForI) apply simp apply (rule hForAuxI)
 
   apply simp
   apply (rule rtranclp_trans)
@@ -79,7 +79,7 @@ lemma runStateComp: "reduces1 (outer (runState comp)) expectedResult"
     apply (rule frameApp)
     apply (rule handleOpI)
       apply simp
-      apply (rule hFor1I)
+      apply (rule_tac i="2" in hForI) apply simp apply (rule hForAuxI)
 
   apply simp
   apply (rule rtranclp_trans)
@@ -104,7 +104,7 @@ lemma runStateComp: "reduces1 (outer (runState comp)) expectedResult"
     apply (rule frameApp)
     apply (rule handleOpI)
       apply simp
-      apply (rule hFor2I)  apply (rule hFor1I)
+      apply (rule_tac i="1" in hForI) apply simp apply (rule hForAuxI)
 
   apply simp
   apply (rule rtranclp_trans)
@@ -129,7 +129,7 @@ lemma runStateComp: "reduces1 (outer (runState comp)) expectedResult"
     apply (rule frameApp)
     apply (rule handleOpI)
       apply simp
-      apply (rule hFor1I)
+      apply (rule_tac i="2" in hForI) apply simp apply (rule hForAuxI)
 
   apply simp
   apply (rule rtranclp_trans)
@@ -154,7 +154,7 @@ lemma runStateComp: "reduces1 (outer (runState comp)) expectedResult"
     apply (rule frameApp)
     apply (rule handleOpI)
       apply simp
-      apply (rule hFor2I)  apply (rule hFor1I)
+      apply (rule_tac i="1" in hForI) apply simp apply (rule hForAuxI)
 
   apply simp
   apply (rule rtranclp_trans)
@@ -178,7 +178,7 @@ lemma runStateComp: "reduces1 (outer (runState comp)) expectedResult"
     apply (rule r_into_rtranclp)
     apply (rule frameApp)
     apply (rule handleFI)
-      apply (rule hReturns2I)  apply (rule hReturns2I) apply (rule hReturns1I)
+      apply (rule hReturnsI)
 
   apply simp
   apply (rule rtranclp_trans)
@@ -215,19 +215,60 @@ proof -
   from 1 4 5 hoistopI show ?thesis by simp
 qed
 
+(* Attempting to use hs!i = h or h \<in> set hs seems to get me into trouble with code_pred, but
+   this indirect approach seems to work. *)
+definition hinhs :: "haux \<Rightarrow> haux list \<Rightarrow> bool" where "hinhs h hs = (h : set hs)"
+
+lemma altListII [code_pred_intro]:
+  "hinhs h (h#t)"
+  "hinhs x t \<Longrightarrow> hinhs x (h#t)"
+ by (auto simp add: hinhs_def)
+
+code_pred [show_modes] hinhs
+unfolding hinhs_def
+by (metis all_not_in_conv in_set_remove1 list.exhaust remove1.simps(2) set_empty)
+
+lemma altHForI:
+  assumes 1: "hinhs h hs"
+  assumes 2: "hauxfor h oper p k m"
+  shows "hfor (h_Handlers x m' hs) oper p k m"
+proof -
+  from 1 obtain i where "hs ! i = h" by (auto simp add: in_set_conv_nth hinhs_def)
+  from this 2 have "hauxfor (hs ! i) oper p k m" by simp
+  hence "hauxfor (hs ! (Suc i - 1)) oper p k m" by simp
+  thus "hfor (h_Handlers x m' hs) oper p k m" by (metis hForI)
+qed
+
+
 lemmas [code_pred_intro] =
   betatimesI betapluslI betaplusrI betaUI betaFI betaAppI betaAmpLI betaAmpRI
-  handleFI handleOpI altFrameI altHoistopI
+  handleFI handleOpI altFrameI altHoistopI altHForI
+
+lemma altHauxfor:
+  "hauxfor (hs!i) oper p k m \<Longrightarrow> \<exists>h. h : set hs \<and> hauxfor h oper p k m"
+proof
+  assume "hauxfor (hs!i) oper p k m"
+  hence "hs!i \<in> set hs"
+  proof
+    show ?thesis oops
+
+(* Broken!  We can produce the code, but we can't do the completeness proofs unless we have some
+   magic way to show that handler lookups hs!i are defined. *)
 
 code_pred hreturns .
-code_pred hfor .
-code_pred (modes: i \<Rightarrow> o \<Rightarrow> bool) reduce
+code_pred (modes: i \<Rightarrow> i \<Rightarrow> o \<Rightarrow> o \<Rightarrow> o \<Rightarrow> bool) hauxfor .
+code_pred (modes: i \<Rightarrow> i \<Rightarrow> o \<Rightarrow> o \<Rightarrow> o \<Rightarrow> bool) hfor
+  apply (induct rule: hfor.cases)
+  apply (simp add: hinhs_def)
+  oops
+
+code_pred (modes: i \<Rightarrow> o \<Rightarrow> bool) reduce sorry(*
   apply (induct rule: reduce.cases)
   apply (metis)+
   apply (metis H.exhaust appctx_H_m.simps ind_appctx_H_m.intros)
   apply (metis)+
   apply (metis CC.exhaust appctx_CC_m.simps ind_appctx_CC_m.intros)
-done
+done*)
 
 export_code reduce_i_o in SML file -
 

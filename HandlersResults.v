@@ -13,7 +13,7 @@ eapply r_step.
   eapply frame with (CC5:=CC_App _).
   eapply handleOp.
     tauto.
-    apply hFor2. apply hFor1.
+    eapply hFor with (i:=1). simpl. reflexivity. constructor.
 
 simpl. eapply r_step.
   eapply betaApp.
@@ -31,7 +31,7 @@ simpl. eapply r_step.
   eapply frame with (CC5:=CC_App _).
   eapply handleOp.
     tauto.
-    apply hFor1.
+    eapply hFor with (i:=2). simpl. reflexivity. constructor.
 
 simpl. eapply r_step.
   apply betaApp.
@@ -49,7 +49,7 @@ simpl. eapply r_step.
   eapply frame with (CC5:=CC_App _).
   eapply handleOp.
     tauto.
-    apply hFor2. apply hFor1.
+    eapply hFor with (i:=1). simpl. reflexivity. constructor.
 
 simpl. eapply r_step.
   apply betaApp.
@@ -67,7 +67,7 @@ simpl. eapply r_step.
   eapply frame with (CC5:=CC_App _).
   eapply handleOp.
     tauto.
-    apply hFor1.
+    eapply hFor with (i:=2). simpl. reflexivity. constructor.
 
 simpl. eapply r_step.
   apply betaApp.
@@ -85,7 +85,7 @@ simpl. eapply r_step.
   eapply frame with (CC5:=CC_App _).
   eapply handleOp.
     tauto.
-    apply hFor2. apply hFor1.
+    eapply hFor with (i:=1). simpl. reflexivity. constructor.
 
 simpl. eapply r_step.
   apply betaApp.
@@ -102,7 +102,7 @@ simpl. eapply r_step.
 simpl. eapply r_step.
   eapply frame with (CC5:=CC_App _).
   eapply handleF.
-    apply hReturns2. apply hReturns2. apply hReturns1.
+    apply hReturns.
 
 simpl. eapply r_step.
   apply betaApp.

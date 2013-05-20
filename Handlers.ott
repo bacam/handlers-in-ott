@@ -1,5 +1,7 @@
 embed {{ coq Require String. }}
 
+indexvar index, i, n ::= {{ isa num }} {{ coq nat }} {{ hol num }}
+
 metavar termvar, x, p, k ::=
   {{ ocaml string }} {{ isa string }} {{ isavar ''[[termvar]]'' }} {{ coq String.string }} {{ lex alphanum }}
 % careful now, Isabelle 2011 doesn't seem to like op as the type name
@@ -49,10 +51,16 @@ m :: 'm_' ::=  {{ com computations }}
   | H . m                          :: M:: MctxH    {{ icho (appctx_H_m [[H]] [[m]]) }}
   | CC . m                         :: M:: MctxC    {{ icho (appctx_CC_m [[CC]] [[m]]) }}
 
-% Can I make it a proper set rather than a list?
+% We don't have a proper disjoint union for forming the handlers, so let's
+% take some liberties and define it as a comprehension in a fairly natural
+% way.
+
+haux :: 'haux_' ::= {{ com single handler }}
+  | oper p k -> m :: :: Handler (+ bind p union k in m +)
+
 h :: 'h_' ::=  {{ com handlers }}
-  | { return x -> m }       ::  :: Return (+ bind x in m +)
-  | h + { oper p k -> m }   ::  :: Handler (+ bind p union k in m +)
+  | { return x -> m | haux1 | .. | hauxn }
+      ::  :: Handlers (+ bind x in m +)
 
 H :: 'H_' ::=
   | let x <- __ in m  :: :: Let (+ bind x in m +)
@@ -112,25 +120,24 @@ ProjReturn :: '' ::=
  defn
  h Returns x m :: ::hreturns::'' by
 
-   ------------------------------ :: hReturns1
-   { return x -> m } Returns x m
-
-   h Returns x m
-   ---------------------------------- :: hReturns2
-   h + {oper p k -> m'} Returns x m
+   -------------------------------------------------- :: hReturns
+   { return x -> m | haux1 | .. | hauxn } Returns x m
 
 defns
 ProjOp :: '' ::=
 
  defn
+  haux Foraux oper p k m :: ::hauxfor::'' by
+
+  ------------------------------- :: hForAux
+  oper p k -> m Foraux oper p k m
+
+ defn
  h For oper p k m :: ::hfor::'' by
 
-   -------------------------------------- :: hFor1
-   h + {oper p k -> m} For oper p k m
-
-   h For oper p k m
-   -------------------------------------- :: hFor2
-   h + {oper' p' k' -> m'} For oper p k m
+   hauxi Foraux oper p k m
+   ------------------------------------------------------ :: hFor
+   { return x -> m' | haux1 | .. | hauxn } For oper p k m
 
 defns
 Jop :: '' ::=
