@@ -23,7 +23,7 @@ clean:
 # Fixes some old Isabelle syntax, plus an issue with the substitution function
 # generation I don't quite understand
 %.thy: %.ott
-	$(OTT) $< -o $@
+	$(OTT) -merge true $^ -o $@
 	sed \
           -e 's/types /type_synonym /' \
           -e 's/: set \[\([^]]*\)] @ \[\([^]]*\)]/: set ([\1] @ [\2])/' \
@@ -45,6 +45,8 @@ clean:
 # Manually say which files should be filtered with which ott rules
 HandlersEx.thy: Handlers.ott
 HandlersEx.v: Handlers.ott
+
+Types.thy: Handlers.ott Types.ott
 
 coq.deps: $(CoqSources) Makefile
 	$(COQDEP) -I . $^ > coq.deps

@@ -1,5 +1,3 @@
-indexvar index, n ::= {{ isa num }} {{ coq nat }} {{ hol num }}
-
 grammar
 A,B :: 'vt_' ::= {{ com value types }}
   | 1       :: :: Unit
@@ -15,11 +13,150 @@ C :: 'ct_' ::= {{ com computation types }}
   | C1 & C2 :: :: Pair
 
 E :: 'ef_' ::= {{ com effect signatures }}
-  | { oper : A -> B } + E  :: :: Oper
+  | E + { oper : A -> B }  :: :: Oper
   | 0                      :: :: Nil
 
 R :: 'r_' ::= {{ com handlers }}
   | A E => E' C :: :: Handler
 
 G :: 'env_' ::= {{ com environments }}
-  | x1 : A1 , .. , xn : An :: :: Env
+  | 0         :: :: ENil
+  | G , x : A :: :: ECons
+
+defns
+Env :: '' ::=
+
+ defn
+ x:A in G :: ::env::'' by
+
+  ------------ :: EnvHere
+  x:A in G,x:A
+
+  x:A in G
+  -------------- :: EnvLater
+  x:A in G,x':A'
+
+defns
+EffSig :: '' ::=
+
+ defn
+ (oper : A -> B) in E :: ::eff::'' by
+
+  -------------------------------------- :: OperHere
+  (oper : A -> B) in E + {oper : A -> B}
+
+  (oper : A -> B) in E
+  ----------------------------------------- :: OperLater
+  (oper : A -> B) in E + {oper' : A' -> B'}
+
+defns
+Typing :: '' ::=
+
+ defn
+ G |- v : A :: ::vtyp::'' by
+
+  x:A in G
+  -------- :: Var
+  G |- x:A
+
+  --------- :: UnitVal
+  G |- ():1
+
+  G |- v1 : A1
+  G |- v2 : A2
+  ---------------------- :: PairVal
+  G |- (v1,v2) : A1 * A2
+
+  G |- v : A1
+  -------------------- :: InL
+  G |- inl v : A1 + A2
+
+  G |- v : A2
+  -------------------- :: InR
+  G |- inr v : A1 + A2
+
+  G |-E m : C
+  ---------------- :: Thunk
+  G |- {m} : U E C
+
+ defn
+ G |- E m : C :: ::ctyp::'' by
+
+  G |- v : A1 * A2
+  G, x1:A1, x2:A2 |-E m : C
+  -------------------------- :: Split
+  G |-E split(v,x1,x2,m) : C
+
+  G |- v : 0
+  ------------------ :: CaseNil
+  G |-E case0(v) : C
+
+  G |- v : A1 + A2
+  G, x1:A1 |-E m1 : C
+  G, x2:A2 |-E m2 : C
+  ----------------------------- :: Case
+  G |-E case(v,x1,m1,x2,m2) : C
+
+  G |- v : U E C
+  -------------- :: Force
+  G |-E v! : C
+
+  G |- v : A
+  -------------------- :: Return
+  G |-E return v : F A
+
+  G |-E m : F A
+  G, x:A |-E m' : C
+  -------------------------- :: Let
+  G |-E let x <- m in m' : C
+
+  G, x:A |-E m : C
+  ------------------- :: Lambda
+  G |-E \x.m : A -> C
+
+  G |-E m : A -> C
+  G |- v : A
+  ---------------- :: App
+  G |-E m v : C
+
+  ------------- :: UnitComp
+  G |-E <> : TT
+
+  G |-E m1 : C1
+  G |-E m2 : C2
+  ----------------------- :: PairComp
+  G |-E <m1,m2> : C1 & C2
+
+  G |-E m : C1 & C2
+  ------------------ :: ProjL
+  G |-E prjl m : C1
+
+  G |-E m : C1 & C2
+  ------------------ :: ProjR
+  G |-E prjr m : C2
+
+  (oper : A -> B) in E
+  G |- v : A
+  G, x:B |-E m : C
+  --------------------- :: Oper
+  G |-E oper v (\x.m) : C
+
+  G |-E m : F A
+  G |- h : A E => E' C
+  -------------------------- :: Handle
+  G |-E' handle m with h : C
+
+ defn
+ G |- h : A E => E' C :: ::handle::'' by
+
+% These two rules are a single rule in the paper, with comprehensions.
+
+  G,x:A |-E' m : C
+  ------------------------------------ :: HandleR
+  G |- { return x -> m } : A E => E' C
+
+  G |- h : A E => E' C
+  G, p:A', k:U E' B -> C |-E' m : C
+  ------------------------------------------------------------ :: HandleOp
+  G |- h + { oper p k -> m } : A E + { oper : A' -> B' } => E' C
+
