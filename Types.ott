@@ -27,7 +27,7 @@ defns
 Env :: '' ::=
 
  defn
- x:A in G :: ::env::'' by
+ x : A in G :: ::env::'' by
 
   ------------ :: EnvHere
   x:A in G,x:A
@@ -40,7 +40,7 @@ defns
 EffSig :: '' ::=
 
  defn
- (oper : A -> B) in E :: ::eff::'' by
+ ( oper : A -> B ) in E :: ::eff::'' by
 
   -------------------------------------- :: OperHere
   (oper : A -> B) in E + {oper : A -> B}
