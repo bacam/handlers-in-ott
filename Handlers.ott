@@ -103,34 +103,31 @@ freevars
 % Don't try to use "funs" to give you definitions for terms unless you add a
 % throwaway parameter - it'll generate bad output.
 
-% Hmm... if I make these projection relations return a lambda term
-% (\x.m or \p k.m) ott just seems to quietly ignore it.
-
 defns
 ProjReturn :: '' ::=
 
  defn
- h Returns x m :: ::hreturns::'' by
+ h Returns \ x . m :: ::hreturns::'' by
 
-   ------------------------------ :: hReturns1
-   { return x -> m } Returns x m
+   ------------------------------- :: hReturns1
+   { return x -> m } Returns \x. m
 
-   h Returns x m
+   h Returns \x. m
    ---------------------------------- :: hReturns2
-   h + {oper p k -> m'} Returns x m
+   h + {oper p k -> m'} Returns \x. m
 
 defns
 ProjOp :: '' ::=
 
  defn
- h For oper p k m :: ::hfor::'' by
+ h For oper \ p k . m :: ::hfor::'' by
 
-   -------------------------------------- :: hFor1
-   h + {oper p k -> m} For oper p k m
+   ------------------------------------ :: hFor1
+   h + {oper p k -> m} For oper \p k. m
 
-   h For oper p k m
-   -------------------------------------- :: hFor2
-   h + {oper' p' k' -> m'} For oper p k m
+   h For oper \p k. m
+   ---------------------------------------- :: hFor2
+   h + {oper' p' k' -> m'} For oper \p k. m
 
 defns
 Jop :: '' ::=
@@ -170,12 +167,12 @@ Jop :: '' ::=
    ------------------------------------- :: hoistop
    H.(oper v (\x.m)) --> oper v (\x.H.m)
 
-   h Returns x m
+   h Returns \x. m
    ----------------------------------- :: handleF
    handle (return v) with h --> m[v/x]
 
    x not in fv(h)
-   h For oper p k m'
+   h For oper \p k. m'
    ---------------------------------------------------------------- :: handleOp
    handle oper v (\x. m) with h --> m'[v/p][{\x.handle m with h}/k]
 
