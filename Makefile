@@ -2,8 +2,8 @@ OTT=../tools/ott/bin/ott
 COQC=coqc
 COQDEP=coqdep
 
-IsaOttTargets=Handlers.thy HandlersEx.thy
-CoqOttTargets=Handlers.v HandlersEx.v
+IsaOttTargets=Handlers.thy HandlersEx.thy Types.thy
+CoqOttTargets=Handlers.v HandlersEx.v Types.v
 CoqSources=HandlersResults.v $(CoqOttTargets)
 CoqVoTargets=$(patsubst %.v,%.vo,$(CoqSources))
 CoqGlobs=$(patsubst %.v,%.glob,$(CoqSources))
@@ -22,17 +22,28 @@ clean:
 
 # Fixes some old Isabelle syntax, plus an issue with the substitution function
 # generation I don't quite understand
-%.thy: %.ott
-	$(OTT) -merge true $^ -o $@
+Handlers.thy: Handlers.ott
+	$(OTT) $^ -o $@
 	sed \
           -e 's/types /type_synonym /' \
           -e 's/: set \[\([^]]*\)] @ \[\([^]]*\)]/: set ([\1] @ [\2])/' \
           < $@ > $@.out
 	mv $@.out $@
-%.v: %.ott
-	$(OTT) $< -o $@
-%.tex: %.ott
-	$(OTT) $< -o $@
+Types.thy: Handlers.ott Types.ott
+	$(OTT) $^ -o $@
+	sed \
+          -e 's/types /type_synonym /' \
+          -e 's/: set \[\([^]]*\)] @ \[\([^]]*\)]/: set ([\1] @ [\2])/' \
+          < $@ > $@.out
+	mv $@.out $@
+Handlers.v: Handlers.ott
+	$(OTT) $^ -o $@
+Types.v: Handlers.ott Types.ott
+	$(OTT) $^ -o $@
+Handlers.tex: Handlers.ott
+	$(OTT) $^ -o $@
+Types.tex: Handlers.ott Types.ott
+	$(OTT) $^ -o $@
 
 %.thy: %.thy.in
 	$(OTT) $(filter %.ott,$^) -isa_filter $< $@
@@ -45,8 +56,6 @@ clean:
 # Manually say which files should be filtered with which ott rules
 HandlersEx.thy: Handlers.ott
 HandlersEx.v: Handlers.ott
-
-Types.thy: Handlers.ott Types.ott
 
 coq.deps: $(CoqSources) Makefile
 	$(COQDEP) -I . $^ > coq.deps
