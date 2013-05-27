@@ -32,6 +32,7 @@ Env :: '' ::=
   ------------ :: EnvHere
   x:A in G,x:A
 
+  x <> x'
   x:A in G
   -------------- :: EnvLater
   x:A in G,x':A'

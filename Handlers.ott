@@ -76,12 +76,15 @@ terminals :: 'terminals_' ::=
 
 formula :: formula_ ::=
   | judgement ::  :: judgement
-  | x not in fv ( H ) :: :: notinfv
+  | x not in fv ( H ) :: M :: notinfv
       {{ coq not (In x (fv_H [[H]])) }}
       {{ isa \<not> (x : set (fv_H [[H]])) }}
-  | x not in fv ( h ) :: :: notinfvh
+  | x not in fv ( h ) :: M :: notinfvh
       {{ coq not (In x (fv_h [[h]])) }}
       {{ isa \<not> (x : set (fv_h [[h]])) }}
+  | x <> x' :: M :: termvarne
+      {{ coq [[x]] <> [[x']] }}
+      {{ isa [[x]] \<noteq> [[x']] }}
 
 contextrules
   H _:: m :: m
