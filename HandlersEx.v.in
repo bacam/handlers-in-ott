@@ -20,13 +20,13 @@ Definition kk := "kk".
 Definition xxx := "xxx".
 Definition st := "st".
 
-Definition comp := [[ get () (\xx. put inl xx (\uu. get () (\yy. put (xx,yy) (\uu'. get () (\zz. return zz))))) ]].
+Definition computation := [[ get () (\xx. put inl xx (\uu. get () (\yy. put (xx,yy) (\uu'. get () (\zz. return zz))))) ]].
 Definition runState := fun m => [[ handle m with { return xxx -> \st. (xxx,st)! } + { get xxx kk -> \st. ((kk! st) st) } + { put xxx kk -> \st. ((kk! ()) xxx) } ]].
 
 Definition outer := fun m => [[ m inr () ]].
 
 
-Inductive reds : m -> m -> Prop :=
+Inductive reds : comp -> comp -> Prop :=
 | r_zero : forall m, reds m m
 | r_step : forall m1 m2 m3, reduce m1 m2 -> reds m2 m3 -> reds m1 m3.
 

@@ -19,7 +19,7 @@ embed {{ coq
 % for Isabelle 2011 to accept it.
 
 grammar
-v :: 'v_' ::=  {{ com values }}
+value, v :: 'v_' ::=  {{ com values }}
   | x           :: :: Var
   | ()          :: :: Unit
   | ( v1 , v2 ) :: :: Pair
@@ -28,7 +28,7 @@ v :: 'v_' ::=  {{ com values }}
   | { m }       :: :: Thunk
 %  | ( v )       ::S:: ParenV
 
-m :: 'm_' ::=  {{ com computations }}
+comp, m :: 'm_' ::=  {{ com computations }}
   | split ( v , x1 , x2 , m )      ::  :: PairElim (+ bind x1 union x2 in m +)
   | case0 ( v )                    ::  :: NilElim
 % Should be x1.m1?
@@ -45,23 +45,23 @@ m :: 'm_' ::=  {{ com computations }}
   | oper v ( \ x . m )             ::  :: Op (+ bind x in m +)
   | handle m with h                ::  :: Handle
   | ( m )                          :: S:: ParenS   {{ icho [[m]] }}
-  | m [ v / x ]                    :: M:: Msub     {{ icho (subst_m [[v]] [[x]] [[m]]) }}
-  | H . m                          :: M:: MctxH    {{ icho (appctx_H_m [[H]] [[m]]) }}
-  | CC . m                         :: M:: MctxC    {{ icho (appctx_CC_m [[CC]] [[m]]) }}
+  | m [ v / x ]                    :: M:: Msub     {{ icho (subst_comp [[v]] [[x]] [[m]]) }}
+  | H . m                          :: M:: MctxH    {{ icho (appctx_hoisting_frame_comp [[H]] [[m]]) }}
+  | CC . m                         :: M:: MctxC    {{ icho (appctx_comp_frame_comp [[CC]] [[m]]) }}
 
 % Can I make it a proper set rather than a list?
-h :: 'h_' ::=  {{ com handlers }}
+handlers, h :: 'h_' ::=  {{ com handlers }}
   | { return x -> m }       ::  :: Return (+ bind x in m +)
   | h + { oper p k -> m }   ::  :: Handler (+ bind p union k in m +)
 
-H :: 'H_' ::=
+hoisting_frame, H :: 'H_' ::=
   | let x <- __ in m  :: :: Let (+ bind x in m +)
   | __ v              :: :: App
   | prjl __           :: :: ProjL
   | prjr __           :: :: ProjR
 
 % Can I avoid duplicating H?
-CC :: 'CC_' ::=
+comp_frame, CC :: 'CC_' ::=
   | let x <- __ in m  :: :: Let (+ bind x in m +)
   | __ v              :: :: App
   | prjl __           :: :: ProjL
@@ -77,11 +77,11 @@ terminals :: 'terminals_' ::=
 formula :: formula_ ::=
   | judgement ::  :: judgement
   | x not in fv ( H ) :: M :: notinfv
-      {{ coq not (In x (fv_H [[H]])) }}
-      {{ isa \<not> (x : set (fv_H [[H]])) }}
+      {{ coq not (In x (fv_hoisting_frame [[H]])) }}
+      {{ isa \<not> (x : set (fv_hoisting_frame [[H]])) }}
   | x not in fv ( h ) :: M :: notinfvh
-      {{ coq not (In x (fv_h [[h]])) }}
-      {{ isa \<not> (x : set (fv_h [[h]])) }}
+      {{ coq not (In x (fv_handlers [[h]])) }}
+      {{ isa \<not> (x : set (fv_handlers [[h]])) }}
   | x <> x' :: M :: termvarne
       {{ coq [[x]] <> [[x']] }}
       {{ isa [[x]] \<noteq> [[x']] }}

@@ -1,33 +1,33 @@
 grammar
-A,B :: 'vt_' ::= {{ com value types }}
+valtyp,A,B :: 'vt_' ::= {{ com value types }}
   | 1       :: :: Unit
   | A1 * A2 :: :: Pair
   | 0       :: :: Empty
   | A1 + A2 :: :: Sum
   | U E C   :: :: Thunk
 
-C :: 'ct_' ::= {{ com computation types }}
+comptyp,C :: 'ct_' ::= {{ com computation types }}
   | F A     :: :: ValueReturning
   | A -> C  :: :: Function
   | TT      :: :: Unit
   | C1 & C2 :: :: Pair
 
-E :: 'ef_' ::= {{ com effect signatures }}
+effsig,E :: 'ef_' ::= {{ com effect signatures }}
   | E + { oper : A -> B }  :: :: Oper
   | 0                      :: :: Nil
 
-R :: 'r_' ::= {{ com handlers }}
+handtyp,R :: 'r_' ::= {{ com handlers }}
   | A E => E' C :: :: Handler
 
-G :: 'env_' ::= {{ com environments }}
-  | 0         :: :: ENil
-  | G , x : A :: :: ECons
+env,G :: 'env_' ::= {{ com environments }}
+  | 0         :: :: Nil
+  | G , x : A :: :: Cons
 
 defns
 Env :: '' ::=
 
  defn
- x : A in G :: ::env::'' by
+ x : A in G :: ::Env::'' by
 
   ------------ :: EnvHere
   x:A in G,x:A

@@ -2,8 +2,8 @@ theory HandlersEx
 imports Main Handlers
 begin
 
-definition comp :: m where
-  "comp \<equiv> [[
+definition computation :: comp where
+  "computation \<equiv> [[
      get () (\xx.
      put inl xx (\uu.
      get () (\yy.
@@ -11,17 +11,17 @@ definition comp :: m where
      get () (\zz.
      return zz))))) ]]"
 
-definition runState :: "m \<Rightarrow> m" where
+definition runState :: "comp \<Rightarrow> comp" where
   "runState \<equiv> \<lambda>m. [[
      handle m with
        { return xxx -> \st. (xxx,st)! }
      + { get xxx kk -> \st. ((kk! st) st) }
      + { put xxx kk -> \st. ((kk! ()) xxx) } ]]"
 
-definition outer :: "m \<Rightarrow> m" where
+definition outer :: "comp \<Rightarrow> comp" where
   "outer \<equiv> \<lambda>m. [[ m inr () ]]"
 
-definition expectedResult :: m where
+definition expectedResult :: comp where
   "expectedResult \<equiv> [[ ((inr (), inl inr ()) , (inr (), inl inr ()))! ]]"
 
 end
