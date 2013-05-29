@@ -253,57 +253,49 @@ Inductive progress_result : comp -> Prop :=
 | pr_alpha : forall m, needs_alpha_conv m -> progress_result m.
 
 Lemma progress:
-  (forall G v' A', vtyp G v' A' -> True) /\
-  (forall G E m C, ctyp G E m C -> G = env_Nil -> progress_result m) /\
-  (forall G h a e e' c, handle G h a e e' c -> True).
-apply typ_comb_ind; eauto using canonical, progress_result.
-* intros G E v x1 x2 m C A1 A2 VT _ CT CIH E1; subst.
-  inversion VT; subst. inversion H.
+  forall E m C, ctyp env_Nil E m C -> progress_result m.
+intros E m C CTYP.
+assert (env_Nil = env_Nil) by reflexivity. revert CTYP H.
+generalize env_Nil at 1 2. induction 1; intro E1; subst; eauto using canonical, progress_result.
+* inversion H; subst. inversion H0.
   eapply pr_step. constructor.
-* intros G E v C VT _ E1; subst. inversion VT; subst. inversion H.
-* intros G E v x1 m1 x2 m2 C A1 A2 VT _ _ _ _ _ E1; subst.
-  inversion VT; subst; [ inversion H | .. ]; eapply pr_step; constructor.
-* intros G E v C VT _ E1; subst.
-  inversion VT; subst; [ inversion H | .. ].
+* inversion H; subst. inversion H0.
+* inversion H; subst; [ inversion H0 | .. ]; eapply pr_step; constructor.
+* inversion H; subst; [ inversion H0 | .. ].
   eapply pr_step; constructor.
-* intros G E x m m' C A CT CIH _ _ E1; subst.
-  cut (progress_result m); auto. intro H.
+* cut (progress_result m); auto. intro H.
   destruct H as [m CAN | m m'' R | m AN ].
-  + inversion CAN; subst; inversion CT; subst.
+  + inversion CAN; subst; inversion CTYP1; subst.
     - eapply pr_step; constructor.
     - case (List.in_dec eq_termvar x0 (fv_hoisting_frame (H_Let x m'))).
       intro BAD. apply pr_alpha. apply AC_hoistop with (H:=H_Let _ _). apply BAD.
       intro GOOD. eapply pr_step; apply hoistop with (H:=H_Let _ _). apply GOOD.
   + eapply pr_step. eapply frame with (CC:=CC_Let _ _). apply R.
   + apply pr_alpha. apply AC_frame with (CC:=CC_Let _ _). assumption.
-* intros G E m v C A CT IH VT _ E1; subst.
-  cut (progress_result m); auto. intro H.
-  destruct H as [m CAN | m m'' R | m AN ].
-  + inversion CAN; subst; inversion CT; subst.
+* cut (progress_result m); auto. intro H'.
+  destruct H' as [m CAN | m m'' R | m AN ].
+  + inversion CAN; subst; inversion CTYP; subst.
     - eapply pr_step; econstructor.
-    - eapply pr_step; apply hoistop with (H:=H_App _). apply (no_fv_value_in_env_Nil _ _ VT x).
+    - eapply pr_step; apply hoistop with (H:=H_App _). apply (no_fv_value_in_env_Nil _ _ H x).
   + eapply pr_step; eapply frame with (CC:=CC_App _). eassumption.
   + apply pr_alpha. apply AC_frame with (CC:=CC_App _). assumption.
-* intros G E m C1 C2 CT IH E1; subst.
-  cut (progress_result m); auto. intro H.
-  destruct H as [m CAN | m m'' R | m AN ].
-  + inversion CAN; subst; inversion CT; subst.
+* cut (progress_result m); auto. intro H'.
+  destruct H' as [m CAN | m m'' R | m AN ].
+  + inversion CAN; subst; inversion CTYP; subst.
     - eapply pr_step; econstructor.
     - eapply pr_step; apply hoistop with (H:=H_ProjL). auto with datatypes.
   + eapply pr_step; eapply frame with (CC:=CC_ProjL). eassumption.
   + apply pr_alpha. apply AC_frame with (CC:=CC_ProjL). assumption.
-* intros G E m C1 C2 CT IH E1; subst.
-  cut (progress_result m); auto. intro H.
-  destruct H as [m CAN | m m'' R | m AN ].
-  + inversion CAN; subst; inversion CT; subst.
+* cut (progress_result m); auto. intro H'.
+  destruct H' as [m CAN | m m'' R | m AN ].
+  + inversion CAN; subst; inversion CTYP; subst.
     - eapply pr_step; econstructor.
     - eapply pr_step; apply hoistop with (H:=H_ProjR). auto with datatypes.
   + eapply pr_step; eapply frame with (CC:=CC_ProjR). eassumption.
   + apply pr_alpha. apply AC_frame with (CC:=CC_ProjR). assumption.
-* intros G E' m h C E A CT IH H _ E1; subst.
-  cut (progress_result m); auto. intro H'.
+* cut (progress_result m); auto. intro H'.
   destruct H' as [m CAN | m m'' R | m AN ].
-  + inversion CAN; subst; inversion CT; subst.
+  + inversion CAN; subst; inversion CTYP; subst.
     - destruct (hreturns_exists h) as [x [m HR]]. eapply pr_step; econstructor. apply HR.
     - destruct (List.in_dec eq_termvar x (fv_handlers h)).
       apply pr_alpha. constructor. apply i.
