@@ -1,4 +1,5 @@
-embed {{ coq Require String. }}
+embed {{ coq Require String.  Require Import ott_list. }}
+embed {{ coq-lib list_mem list_minus }}
 
 metavar termvar, x, p, k ::=
   {{ ocaml string }} {{ isa string }} {{ isavar ''[[termvar]]'' }} {{ coq String.string }} {{ lex alphanum }}
@@ -76,6 +77,12 @@ terminals :: 'terminals_' ::=
 
 formula :: formula_ ::=
   | judgement ::  :: judgement
+  | x in fv ( H ) :: M :: infv
+      {{ coq In x (fv_hoisting_frame [[H]]) }}
+      {{ isa x : set (fv_hoisting_frame [[H]]) }}
+  | x in fv ( h ) :: M :: infvh
+      {{ coq In x (fv_handlers [[h]]) }}
+      {{ isa x : set (fv_handlers [[h]]) }}
   | x not in fv ( H ) :: M :: notinfv
       {{ coq not (In x (fv_hoisting_frame [[H]])) }}
       {{ isa \<not> (x : set (fv_hoisting_frame [[H]])) }}
@@ -183,3 +190,20 @@ Jop :: '' ::=
    -------------- :: frame
    CC.m --> CC.m'
 
+% Cases in which reduction can get stuck due to a lack of alpha conversion.
+
+defns
+  Needs_alpha_conv :: '' ::=
+defn needs_alpha_conv m :: ::needs_alpha_conv::'AC_' by
+
+   x in fv(H)
+   ------------------------------------- :: hoistop
+   needs_alpha_conv H.(oper v (\x.m))
+
+   x in fv(h)
+   ---------------------------------------------------------------- :: handleOp
+   needs_alpha_conv handle oper v (\x. m) with h
+
+   needs_alpha_conv m
+   --------------------- :: frame
+   needs_alpha_conv CC.m

@@ -1,10 +1,11 @@
 OTT=../tools/ott/bin/ott
-COQC=coqc
+OTTCOQ=../tools/ott/coq
+COQC=coqc -I $(OTTCOQ)
 COQDEP=coqdep
 
 IsaOttTargets=Handlers.thy HandlersEx.thy Types.thy
 CoqOttTargets=Handlers.v HandlersEx.v Types.v
-CoqSources=HandlersResults.v $(CoqOttTargets)
+CoqSources=HandlersResults.v TypesResults.v $(CoqOttTargets)
 CoqVoTargets=$(patsubst %.v,%.vo,$(CoqSources))
 CoqGlobs=$(patsubst %.v,%.glob,$(CoqSources))
 

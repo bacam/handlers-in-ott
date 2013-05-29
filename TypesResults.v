@@ -152,7 +152,7 @@ apply typ_comb_ind; eauto using vtyp, ctyp.
   simpl. econstructor; eauto.
 
 (* Handlers *)
-* intros G x' m A' E E' C CT CIH ENV VT.
+* intros G x' m A' E' C CT CIH ENV VT.
   simpl in CIH |- *. econstructor; auto.
   destruct (eq_termvar x' x); subst.
   + apply (env_ctyp CT). intros xx AA. apply env_remove_cons.
@@ -165,6 +165,151 @@ apply typ_comb_ind; eauto using vtyp, ctyp.
     - apply (env_ctyp CT). intros xx AA. apply env_remove_cons2.
     - apply CIH; eauto using Env.
 
+Qed.
+
+Require Import ott_list.
+Require Import List.
+
+Lemma not_In_list_minus :
+  forall {l l' x}, List.In x (list_minus eq_termvar l l') -> List.In x l' -> False.
+induction l.
+* tauto.
+* intros. simpl in H. destruct (list_mem eq_termvar a l') eqn:E.
+  + apply (IHl _ _ H). assumption.
+  + inversion H; subst.
+    - absurd (In x l'); eauto using list_mem_false_implies_not_In.
+    - apply (IHl l' x H1 H0).
+Qed.
+
+Lemma adjust_extended_env1: forall {x x1 A1 l G},
+  (In x l -> exists A, Env x A (env_Cons G x1 A1)) ->
+  In x (list_minus eq_termvar l (x1::nil)%list) -> exists A, Env x A G.
+intros.
+destruct (H (In_list_plus _ _ _ _ H0)) as [A ENV].
+inversion ENV; subst.
+* exfalso. apply (not_In_list_minus H0). auto with datatypes.
+* exists A. assumption.
+Qed.
+
+Lemma adjust_extended_env2: forall {x x1 A1 x2 A2 l G},
+  (In x l -> exists A, Env x A (env_Cons (env_Cons G x1 A1) x2 A2)) ->
+  In x (list_minus eq_termvar l (x1::x2::nil)%list) -> exists A, Env x A G.
+intros.
+destruct (H (In_list_plus _ _ _ _ H0)) as [A ENV].
+inversion ENV; subst.
+* exfalso. apply (not_In_list_minus H0). auto with datatypes.
+* inversion H7; subst.
+  + exfalso. apply (not_In_list_minus H0). auto with datatypes.
+  + exists A. assumption.
+Qed.
+
+Lemma fv_in_env:
+  (forall G v A', vtyp G v A' -> forall x, List.In x (fv_value v) -> exists A, Env x A G) /\
+  (forall G e m C, ctyp G e m C -> forall x, List.In x (fv_comp m) -> exists A, Env x A G) /\
+  (forall G h A' E E' C, handle G h A' E E' C -> forall x, List.In x (fv_handlers h) -> exists A, Env x A G).
+apply typ_comb_ind; eauto using adjust_extended_env1.
+* intros; subst. simpl in H0. inversion H0. subst. eexists; eassumption. case H1.
+* intros. simpl in H. case H.
+* intros. simpl in H3. case (List.in_app_or _ _ _ H3); auto.
+* intros. simpl in H3. case (List.in_app_or _ _ _ H3); eauto using adjust_extended_env2.
+* intros. simpl in H5. case (List.in_app_or _ _ _ H5); auto.
+  intro IN. case (List.in_app_or _ _ _ IN); eauto using adjust_extended_env1.
+* intros. simpl in H3. case (List.in_app_or _ _ _ H3); eauto using adjust_extended_env1.
+* intros. case (List.in_app_or _ _ _ H3); eauto using adjust_extended_env1.
+* intros. case H.
+* intros. case (List.in_app_or _ _ _ H3); eauto.
+* intros. simpl in H4. case (List.in_app_or _ _ _ H4); eauto using adjust_extended_env1.
+* intros. simpl in H3. case (List.in_app_or _ _ _ H3); eauto.
+* intros. simpl in H3. case (List.in_app_or _ _ _ H3); eauto using adjust_extended_env2.
+Qed.
+
+Lemma no_fv_value_in_env_Nil: forall v A,
+  vtyp env_Nil v A -> forall x, ~In x (fv_value v).
+intros v A VT x IN.
+destruct (proj1 fv_in_env _ _ _ VT _ IN) as [A' ENV].
+inversion ENV.
+Qed.
+
+Lemma hreturns_exists:
+  forall h, exists x m, hreturns h x m.
+induction h; eauto using hreturns.
+destruct IHh as [x [m' H]]. eauto using hreturns.
+Qed.
+
+Lemma hfor_exists: forall {G h A E E' C oper A' B},
+  handle G h A E E' C ->
+  eff oper A' B E ->
+  exists p k m, hfor h oper p k m.
+intros until B. induction 1; inversion 1; subst.
+* exists p,k,m. constructor.
+* destruct (IHhandle H6) as [p' [k' [m' HFOR]]]. exists p',k',m'. eauto using hfor.
+Qed.
+
+(* Note the extra case to deal with variable capture. *)
+
+Inductive progress_result : comp -> Prop :=
+| pr_canonical : forall m, canonical m -> progress_result m
+| pr_step : forall m m', reduce m m' -> progress_result m
+| pr_alpha : forall m, needs_alpha_conv m -> progress_result m.
+
+Lemma progress:
+  (forall G v' A', vtyp G v' A' -> True) /\
+  (forall G E m C, ctyp G E m C -> G = env_Nil -> progress_result m) /\
+  (forall G h a e e' c, handle G h a e e' c -> True).
+apply typ_comb_ind; eauto using canonical, progress_result.
+* intros G E v x1 x2 m C A1 A2 VT _ CT CIH E1; subst.
+  inversion VT; subst. inversion H.
+  eapply pr_step. constructor.
+* intros G E v C VT _ E1; subst. inversion VT; subst. inversion H.
+* intros G E v x1 m1 x2 m2 C A1 A2 VT _ _ _ _ _ E1; subst.
+  inversion VT; subst; [ inversion H | .. ]; eapply pr_step; constructor.
+* intros G E v C VT _ E1; subst.
+  inversion VT; subst; [ inversion H | .. ].
+  eapply pr_step; constructor.
+* intros G E x m m' C A CT CIH _ _ E1; subst.
+  cut (progress_result m); auto. intro H.
+  destruct H as [m CAN | m m'' R | m AN ].
+  + inversion CAN; subst; inversion CT; subst.
+    - eapply pr_step; constructor.
+    - case (List.in_dec eq_termvar x0 (fv_hoisting_frame (H_Let x m'))).
+      intro BAD. apply pr_alpha. apply AC_hoistop with (H:=H_Let _ _). apply BAD.
+      intro GOOD. eapply pr_step; apply hoistop with (H:=H_Let _ _). apply GOOD.
+  + eapply pr_step. eapply frame with (CC:=CC_Let _ _). apply R.
+  + apply pr_alpha. apply AC_frame with (CC:=CC_Let _ _). assumption.
+* intros G E m v C A CT IH VT _ E1; subst.
+  cut (progress_result m); auto. intro H.
+  destruct H as [m CAN | m m'' R | m AN ].
+  + inversion CAN; subst; inversion CT; subst.
+    - eapply pr_step; econstructor.
+    - eapply pr_step; apply hoistop with (H:=H_App _). apply (no_fv_value_in_env_Nil _ _ VT x).
+  + eapply pr_step; eapply frame with (CC:=CC_App _). eassumption.
+  + apply pr_alpha. apply AC_frame with (CC:=CC_App _). assumption.
+* intros G E m C1 C2 CT IH E1; subst.
+  cut (progress_result m); auto. intro H.
+  destruct H as [m CAN | m m'' R | m AN ].
+  + inversion CAN; subst; inversion CT; subst.
+    - eapply pr_step; econstructor.
+    - eapply pr_step; apply hoistop with (H:=H_ProjL). auto with datatypes.
+  + eapply pr_step; eapply frame with (CC:=CC_ProjL). eassumption.
+  + apply pr_alpha. apply AC_frame with (CC:=CC_ProjL). assumption.
+* intros G E m C1 C2 CT IH E1; subst.
+  cut (progress_result m); auto. intro H.
+  destruct H as [m CAN | m m'' R | m AN ].
+  + inversion CAN; subst; inversion CT; subst.
+    - eapply pr_step; econstructor.
+    - eapply pr_step; apply hoistop with (H:=H_ProjR). auto with datatypes.
+  + eapply pr_step; eapply frame with (CC:=CC_ProjR). eassumption.
+  + apply pr_alpha. apply AC_frame with (CC:=CC_ProjR). assumption.
+* intros G E' m h C E A CT IH H _ E1; subst.
+  cut (progress_result m); auto. intro H'.
+  destruct H' as [m CAN | m m'' R | m AN ].
+  + inversion CAN; subst; inversion CT; subst.
+    - destruct (hreturns_exists h) as [x [m HR]]. eapply pr_step; econstructor. apply HR.
+    - destruct (List.in_dec eq_termvar x (fv_handlers h)).
+      apply pr_alpha. constructor. apply i.
+      destruct (hfor_exists H H7) as [p [k [m HF]]]. eapply pr_step; econstructor; eauto.
+  + eapply pr_step; eapply frame with (CC:=CC_Handle _). eassumption.
+  + apply pr_alpha. apply AC_frame with (CC:=CC_Handle _). assumption.
 Qed.
 
 

@@ -154,10 +154,31 @@ Typing :: '' ::=
 
   G,x:A |-E' m : C
   ------------------------------------ :: HandleR
-  G |- { return x -> m } : A E => E' C
+  G |- { return x -> m } : A 0 => E' C
 
   G |- h : A E => E' C
   G, p:A', k:U E' B -> C |-E' m : C
   ------------------------------------------------------------ :: HandleOp
   G |- h + { oper p k -> m } : A E + { oper : A' -> B' } => E' C
 
+
+defns
+Canonical :: '' ::=
+
+ defn
+ canonical m :: ::canonical::'C_' by
+
+ ------------------ :: Value
+ canonical return v
+
+ -------------- :: Lambda
+ canonical \x.m
+
+ ------------ :: Unit
+ canonical <>
+
+ ----------------- :: Pair
+ canonical <m1,m2>
+
+ ----------------------- :: Oper
+ canonical oper v (\x.m)
