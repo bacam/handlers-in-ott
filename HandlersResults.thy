@@ -54,7 +54,7 @@ lemma runStateComp: "reduces1 (outer (runState computation)) expectedResult"
     apply (rule frameApp)
     apply (rule handleOpI)
       apply simp
-      apply (rule hFor2I)  apply (rule hFor1I)
+      apply (rule hFor2I) apply simp  apply (rule hFor1I)
 
   apply simp
   apply (rule rtranclp_trans)
@@ -104,7 +104,7 @@ lemma runStateComp: "reduces1 (outer (runState computation)) expectedResult"
     apply (rule frameApp)
     apply (rule handleOpI)
       apply simp
-      apply (rule hFor2I)  apply (rule hFor1I)
+      apply (rule hFor2I) apply simp apply (rule hFor1I)
 
   apply simp
   apply (rule rtranclp_trans)
@@ -154,7 +154,7 @@ lemma runStateComp: "reduces1 (outer (runState computation)) expectedResult"
     apply (rule frameApp)
     apply (rule handleOpI)
       apply simp
-      apply (rule hFor2I)  apply (rule hFor1I)
+      apply (rule hFor2I) apply simp apply (rule hFor1I)
 
   apply simp
   apply (rule rtranclp_trans)
