@@ -11,7 +11,7 @@ eapply r_step.
   eapply frame with (CC:=CC_App _).
   eapply handleOp.
     tauto.
-    apply hFor2. apply hFor1.
+    apply hFor2. discriminate. apply hFor1.
 
 simpl. eapply r_step.
   eapply betaApp.
@@ -47,7 +47,7 @@ simpl. eapply r_step.
   eapply frame with (CC:=CC_App _).
   eapply handleOp.
     tauto.
-    apply hFor2. apply hFor1.
+    apply hFor2. discriminate. apply hFor1.
 
 simpl. eapply r_step.
   apply betaApp.
@@ -83,7 +83,7 @@ simpl. eapply r_step.
   eapply frame with (CC:=CC_App _).
   eapply handleOp.
     tauto.
-    apply hFor2. apply hFor1.
+    apply hFor2. discriminate. apply hFor1.
 
 simpl. eapply r_step.
   apply betaApp.

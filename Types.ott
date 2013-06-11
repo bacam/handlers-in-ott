@@ -46,6 +46,7 @@ EffSig :: '' ::=
   -------------------------------------- :: OperHere
   (oper : A -> B) in E + {oper : A -> B}
 
+  oper <> oper'
   (oper : A -> B) in E
   ----------------------------------------- :: OperLater
   (oper : A -> B) in E + {oper' : A' -> B'}
@@ -83,8 +84,9 @@ Typing :: '' ::=
  defn
  G |- E m : C :: ::ctyp::'' by
 
+% The order for context extension is rather awkward here
   G |- v : A1 * A2
-  G, x1:A1, x2:A2 |-E m : C
+  G, x2:A2, x1:A1 |-E m : C
   -------------------------- :: Split
   G |-E split(v,x1,x2,m) : C
 
@@ -157,9 +159,9 @@ Typing :: '' ::=
   G |- { return x -> m } : A 0 => E' C
 
   G |- h : A E => E' C
-  G, p:A', k:U E' B -> C |-E' m : C
+  G, k:U E' B -> C, p:A' |-E' m : C
   ------------------------------------------------------------ :: HandleOp
-  G |- h + { oper p k -> m } : A E + { oper : A' -> B' } => E' C
+  G |- h + { oper p k -> m } : A E + { oper : A' -> B } => E' C
 
 
 defns

@@ -92,6 +92,9 @@ formula :: formula_ ::=
   | x <> x' :: M :: termvarne
       {{ coq [[x]] <> [[x']] }}
       {{ isa [[x]] \<noteq> [[x']] }}
+  | oper <> oper' :: M :: operne
+      {{ coq [[oper]] <> [[oper']] }}
+      {{ isa [[oper]] \<noteq> [[oper']] }}
 
 contextrules
   H _:: m :: m
@@ -135,6 +138,7 @@ ProjOp :: '' ::=
    ------------------------------------ :: hFor1
    h + {oper p k -> m} For oper \p k. m
 
+   oper <> oper'
    h For oper \p k. m
    ---------------------------------------- :: hFor2
    h + {oper' p' k' -> m'} For oper \p k. m
