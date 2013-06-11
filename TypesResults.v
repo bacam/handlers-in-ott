@@ -71,6 +71,11 @@ Corollary env_ctyp:
 apply (proj1 (proj2 env_variant)).
 Qed.
 
+Corollary env_handle:
+  forall {G h A' E E' C}, handle G h A' E E' C -> forall G', (forall x A, Env x A G -> Env x A G') -> handle G' h A' E E' C.
+apply (proj2 (proj2 env_variant)).
+Qed.
+
 Lemma eq_termvar_eq: forall {x} {A:Type} {P Q:A},
   (if eq_termvar x x then P else Q) = P.
 intros. apply (decide_left (eq_termvar x x)); auto.
@@ -112,9 +117,9 @@ apply typ_comb_ind; eauto using vtyp, ctyp.
 * intros G E v' x1 x2 m C A1 A2 VT' IH1 CT IH2 ENV VT. simpl in IH2 |- *.
   apply Split with (A1:=A1) (A2:=A2); auto.
   destruct (eq_termvar x1 x); subst.
-  + apply (env_ctyp CT). apply env_extend. intros xx AA. apply env_remove_cons.
+  + apply (env_ctyp CT). intros xx AA. apply env_remove_cons2.
   + destruct (eq_termvar x2 x); subst.
-    - apply (env_ctyp CT). intros xx AA. apply env_remove_cons2.
+    - apply (env_ctyp CT). apply env_extend. intros xx AA. apply env_remove_cons.
     - apply IH2; eauto using Env.
 * intros G E v' x1 m1 x2 m2 C A1 A2 VT' VIH C1 C1IH C2 C2IH ENV VT.
   simpl in C1IH, C2IH |- *.
@@ -157,14 +162,101 @@ apply typ_comb_ind; eauto using vtyp, ctyp.
   destruct (eq_termvar x' x); subst.
   + apply (env_ctyp CT). intros xx AA. apply env_remove_cons.
   + apply CIH; eauto using Env.
-* intros G h op p k m A1 E A' B' E' C B H HIH CT CIH ENV VT.
+* intros G h op p k m A1 E A' E' B C H HIH CT CIH ENV VT.
   simpl in CIH |- *. econstructor; auto.
   destruct (eq_termvar p x); subst.
-  + apply (env_ctyp CT). apply env_extend. intros xx AA. apply env_remove_cons.
+  + apply (env_ctyp CT). intros xx AA. apply env_remove_cons2.
   + destruct (eq_termvar k x); subst.
-    - apply (env_ctyp CT). intros xx AA. apply env_remove_cons2.
+    - apply (env_ctyp CT). apply env_extend. intros xx AA. apply env_remove_cons.
     - apply CIH; eauto using Env.
 
+Qed.
+
+Lemma comp_substitution1: forall v A x E m C,
+  ctyp (env_Cons env_Nil x A) E m C ->
+  vtyp env_Nil v A ->
+  ctyp env_Nil E (subst_comp v x m) C.
+intros. 
+cut (env_Nil = (remove x (env_Cons env_Nil x A))).
+intro EQ; rewrite EQ.
+apply (proj1 (proj2 (substitution v A x))); eauto using Env.
+simpl. rewrite eq_termvar_eq. reflexivity.
+Qed.
+
+Scheme value_ind := Induction for value Sort Prop
+  with comp_ind := Induction for comp Sort Prop
+  with handlers_ind := Induction for handlers Sort Prop.
+Combined Scheme term_ind from value_ind, comp_ind, handlers_ind.
+
+Lemma double_subst: forall v w x,
+  (forall u, subst_value w x (subst_value v x u) = subst_value (subst_value w x v) x u) /\
+  (forall m, subst_comp w x (subst_comp v x m) = subst_comp (subst_value w x v) x m) /\
+  (forall h, subst_handlers w x (subst_handlers v x h) = subst_handlers (subst_value w x v) x h).
+intros v w x. apply term_ind; simpl; eauto; try congruence.
+* intros. destruct (eq_termvar x0 x); subst; simpl; auto. rewrite eq_termvar_neq; auto.
+* intros.
+   destruct (eq_termvar x1 x). congruence.
+   destruct (eq_termvar x2 x); congruence.
+* intros.
+   destruct (eq_termvar x1 x); destruct (eq_termvar x2 x); congruence.
+* intros. destruct (eq_termvar x0 x); congruence.
+* intros. destruct (eq_termvar x0 x); congruence.
+* intros. destruct (eq_termvar x0 x); congruence.
+* intros. destruct (eq_termvar x0 x); congruence.
+* intros. destruct (eq_termvar p x); destruct (eq_termvar k x); congruence.
+Qed.
+
+Lemma not_env_Cons: forall {x x' A' G},
+  (forall A, ~ Env x A G) ->
+  x <> x' ->
+  (forall A, ~ Env x A (env_Cons G x' A')).
+intros. intro ENV. inversion ENV; subst.
+* congruence.
+* apply (H A H7).
+Qed.
+
+
+Lemma fresh_subst: forall w x,
+  (forall G v A, vtyp G v A -> (forall A', not (Env x A' G)) -> subst_value w x v = v) /\
+  (forall G E m C, ctyp G E m C -> (forall A', not (Env x A' G)) -> subst_comp w x m = m) /\
+  (forall G h A E E' C, handle G h A E E' C -> (forall A', not (Env x A' G)) -> subst_handlers w x h = h).
+intros w x.
+apply typ_comb_ind; simpl; intros;
+repeat match goal with |- context [ eq_termvar ?x ?y ] => destruct (eq_termvar x y); subst end;
+repeat match goal with H1 : _ -> subst_value _ _ _ = ?v1 |- _ => rewrite H1; auto end;
+repeat match goal with H1 : _ -> subst_comp _ _ _ = ?m1 |- _ => rewrite H1; auto end;
+repeat match goal with H1 : _ -> subst_handlers _ _ _ = ?h1 |- _ => rewrite H1; auto end;
+try congruence;
+auto using not_env_Cons.
+* case (H0 _ H).
+Qed.
+
+Lemma closed_subst: forall {v A w x},
+  vtyp env_Nil v A -> subst_value w x v = v.
+intros. apply (proj1 (fresh_subst w x) env_Nil v A H).
+intros A' ENV. inversion ENV.
+Qed.
+
+Lemma comp_substitution2: forall v A x w B y E m C,
+  ctyp (env_Cons (env_Cons env_Nil y B) x A) E m C ->
+  vtyp env_Nil v A ->
+  vtyp env_Nil w B ->
+  ctyp env_Nil E (subst_comp w y (subst_comp v x m)) C.
+intros.
+destruct (eq_termvar x y).
+* subst. rewrite (proj1 (proj2 (double_subst v w y))).
+  rewrite (closed_subst H0).
+  eapply comp_substitution1; eauto.
+  apply (env_ctyp H).
+  clear. intros. inversion H; subst; eauto using Env.
+  inversion H6; subst; eauto using Env.
+  congruence.
+* cut (env_Nil = (remove y (remove x (env_Cons (env_Cons env_Nil y B) x A)))).
+  intro EQ; rewrite EQ.
+  apply (proj1 (proj2 (substitution w B y))); eauto.
+  apply (proj1 (proj2 (substitution v A x))); eauto using Env.
+  simpl. rewrite eq_termvar_eq. eauto using Env.
+  simpl. rewrite eq_termvar_eq. simpl. rewrite eq_termvar_eq. reflexivity.
 Qed.
 
 Require Import ott_list.
@@ -192,7 +284,7 @@ inversion ENV; subst.
 Qed.
 
 Lemma adjust_extended_env2: forall {x x1 A1 x2 A2 l G},
-  (In x l -> exists A, Env x A (env_Cons (env_Cons G x1 A1) x2 A2)) ->
+  (In x l -> exists A, Env x A (env_Cons (env_Cons G x2 A1) x1 A2)) ->
   In x (list_minus eq_termvar l (x1::x2::nil)%list) -> exists A, Env x A G.
 intros.
 destruct (H (In_list_plus _ _ _ _ H0)) as [A ENV].
@@ -242,7 +334,7 @@ Lemma hfor_exists: forall {G h A E E' C oper A' B},
   exists p k m, hfor h oper p k m.
 intros until B. induction 1; inversion 1; subst.
 * exists p,k,m. constructor.
-* destruct (IHhandle H6) as [p' [k' [m' HFOR]]]. exists p',k',m'. eauto using hfor.
+* destruct (IHhandle H10) as [p' [k' [m' HFOR]]]. exists p',k',m'. eauto using hfor.
 Qed.
 
 (* Note the extra case to deal with variable capture. *)
@@ -304,4 +396,67 @@ generalize env_Nil at 1 2. induction 1; intro E1; subst; eauto using canonical, 
   + apply pr_alpha. apply AC_frame with (CC:=CC_Handle _). assumption.
 Qed.
 
+Lemma hreturns_ctyp: forall {G h A E E' C x m},
+  handle G h A E E' C ->
+  hreturns h x m ->
+  ctyp (env_Cons G x A) E' m C.
+intros. induction H.
+* inversion H0; subst; assumption.
+* inversion H0; subst; auto.
+Qed.
+
+Lemma hfor_ctyp: forall {G h A E E' C A' B oper p k m},
+  handle G h A E E' C ->
+  eff oper A' B E ->
+  hfor h oper p k m ->
+  ctyp (env_Cons (env_Cons G k (vt_Thunk E' (ct_Function B C))) p A') E' m C.
+intros until m. induction 1.
+* inversion 1.
+* inversion 1; subst.
+  + inversion 1; subst.
+      - assumption.
+      - congruence.
+  + inversion 1; subst.
+      - congruence.
+      - auto.
+Qed.
+
+(* Again, stick to closed values *)
+
+Lemma preservation:
+  forall E m C,
+    ctyp env_Nil E m C ->
+  forall m',
+    reduce m m' ->
+    ctyp env_Nil E m' C.
+intros E m C CTYP.
+assert (env_Nil = env_Nil) by reflexivity. revert CTYP H.
+generalize env_Nil at 1 2.
+induction 1; intro E1; subst; intros m'' RED; inversion RED; subst;
+match goal with H : appctx_hoisting_frame_comp ?HF _ = _ |- _ => destruct HF; simpl in H; simplify_eq H; intros; subst | _ => idtac end;
+match goal with H : appctx_comp_frame_comp ?CC _ = _ |- _ => destruct CC; simpl in H; simplify_eq H; intros; subst | _ => idtac end;
+simpl;
+try solve [eauto using ctyp | inversion H; subst; eauto using comp_substitution1, comp_substitution2].
+* inversion CTYP1; subst; eapply comp_substitution1; eauto.
+* inversion CTYP1; subst.
+   econstructor; eauto.
+   econstructor; eauto.
+   eapply env_ctyp; eauto.
+   clear. intros. inversion H; subst; eauto using Env. inversion H6.
+* inversion CTYP; subst. eapply comp_substitution1; eauto.
+* inversion CTYP; subst; econstructor; eauto. econstructor; eauto.
+   apply (env_vtyp H).
+   clear; intros; inversion H; subst; eauto using Env.
+* inversion CTYP; subst; eauto.
+* inversion CTYP; subst; econstructor; eauto. econstructor; eauto.
+* inversion CTYP; subst; eauto.
+* inversion CTYP; subst; econstructor; eauto. econstructor; eauto.
+* inversion CTYP; subst. eapply comp_substitution1; eauto.
+  eauto using hreturns_ctyp.
+* inversion CTYP; subst. eapply comp_substitution2; eauto.
+  + eapply hfor_ctyp; eauto.
+  + constructor; auto. constructor; auto. econstructor; eauto.
+      eapply env_handle; eauto.
+      clear; intros; inversion H.
+Qed.
 
