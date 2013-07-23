@@ -2,6 +2,10 @@ theory HandlersResults
 imports Main "~~/src/HOL/Library/Transitive_Closure_Table" Handlers HandlersEx
 begin
 
+(* Ott produces functions for context substitution, but the predicate compiler only works
+   with inductive versions, so let's provide some.  (Sadly, the predicate compiler's
+   inductify option doesn't seem to work here.) *)
+
 inductive
 ind_appctx_H_m :: "hoisting_frame \<Rightarrow> comp \<Rightarrow> comp \<Rightarrow> bool"
 where
@@ -28,6 +32,8 @@ lemma altC: "ind_appctx_CC_m CC m m' \<Longrightarrow> m' = appctx_comp_frame_co
 apply (induct rule: ind_appctx_CC_m.induct)
 apply simp_all
 done
+
+(* Do some reductions by hand. *)
 
 definition reduces1 :: "comp \<Rightarrow> comp \<Rightarrow> bool" where "reduces1 = reduce^**"
 
@@ -188,6 +194,9 @@ lemma runStateComp: "reduces1 (outer (runState computation)) expectedResult"
   apply (simp add: expectedResult_def)
 done
 
+(* To use the inductive version of context application with the predicate compiler we'll
+   need to provide some alternative introduction rules. *)
+
 lemma altFrameI: "\<lbrakk>reduce (m) (m')\<rbrakk> \<Longrightarrow>
   ind_appctx_CC_m CC m m1  \<Longrightarrow>
   ind_appctx_CC_m CC m' m2 \<Longrightarrow>
@@ -231,9 +240,11 @@ done
 
 export_code reduce_i_o in SML file -
 
+(* Single step *)
 value "Predicate.the (reduce_i_o (outer (runState computation)))"
 values "{m. reduce (outer (runState computation)) m}"
 
+(* Reduce as much as possible *)
 inductive reduces :: "comp \<Rightarrow> comp \<Rightarrow> bool" where
   "\<not>(\<exists>m'. reduce m m') \<Longrightarrow> reduces m m"
 | "reduce m m' \<Longrightarrow> reduces m' m'' \<Longrightarrow> reduces m m''"
@@ -248,7 +259,12 @@ export_code reduces_i_o outer runState comp Predicate.the in SML file -
 
 value "Predicate.the (reduces_i_o (outer (runState computation)))"
 
+(* We can get all the steps, too. *)
 values "{m. reduce^** (outer (runState computation)) m}"
+
+(* The "bad" term doesn't reduce *)
+values "{m. reduce^** bad m}"
+
 
 end
 

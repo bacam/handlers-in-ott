@@ -24,4 +24,11 @@ definition outer :: "comp \<Rightarrow> comp" where
 definition expectedResult :: comp where
   "expectedResult \<equiv> [[ ((inr (), inl inr ()) , (inr (), inl inr ()))! ]]"
 
+definition bad :: comp where
+  "bad \<equiv> [[ 
+     let xx <- handle let yy <- get () (\xx. return xx) in return xx with
+                 { return xxx -> return () }
+               + { get xxx kk -> return () } in
+     return () ]]"
+
 end

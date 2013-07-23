@@ -108,3 +108,11 @@ simpl. eapply r_step.
 simpl. apply r_zero.
 Qed.
 
+Example nac_bad : needs_alpha_conv bad.
+unfold bad.
+apply AC_frame with (CC:=CC_Let _ _).
+apply AC_frame with (CC:=CC_Handle _).
+apply AC_hoistop with (H:=H_Let _ _).
+simpl. tauto.
+Qed.
+

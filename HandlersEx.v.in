@@ -32,3 +32,9 @@ Inductive reds : comp -> comp -> Prop :=
 
 Definition expectedResult := [[ ((inr (), inl inr ()) , (inr (), inl inr ()))! ]].
 
+Definition bad : comp :=
+  [[ let xx <- handle let yy <- get () (\xx. return xx) in return xx with
+                 { return xxx -> return () }
+               + { get xxx kk -> return () } in
+     return () ]].
+
