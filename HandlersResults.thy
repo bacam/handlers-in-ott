@@ -265,6 +265,13 @@ values "{m. reduce^** (outer (runState computation)) m}"
 (* The "bad" term doesn't reduce *)
 values "{m. reduce^** bad m}"
 
+lemma "needs_alpha_conv bad"
+apply (simp add: bad_def)
+apply (rule AC_frameI [of _ "CC_Let ''xx'' (m_Return v_Unit)", simplified])
+apply (rule AC_frameI [of _ "CC_Handle (h_Handler (h_Return ''xxx'' (m_Return v_Unit)) ''get'' ''xxx'' ''kk'' (m_Return v_Unit))", simplified])
+apply (rule AC_hoistopI [of _ "H_Let ''yy'' (m_Return (v_Var ''xx''))", simplified])
+apply simp
+done
 
 end
 
