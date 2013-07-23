@@ -2,10 +2,13 @@ embed {{ coq Require String.  Require Import ott_list. }}
 embed {{ coq-lib list_mem list_minus }}
 
 metavar termvar, x, p, k ::=
-  {{ ocaml string }} {{ isa string }} {{ isavar ''[[termvar]]'' }} {{ coq String.string }} {{ lex alphanum }}
+  {{ ocaml string }} {{ isa string }} {{ isavar ''[[termvar]]'' }}
+  {{ coq String.string }} {{ lex alphanum }}
+
 % careful now, Isabelle 2011 doesn't seem to like op as the type name
 metavar oper ::= 
-  {{ ocaml string }} {{ isa string }} {{ isavar ''[[oper]]'' }} {{ coq String.string }} {{ lex alphanum }}
+  {{ ocaml string }} {{ isa string }} {{ isavar ''[[oper]]'' }}
+  {{ coq String.string }} {{ lex alphanum }}
 
 embed {{ coq
   Definition eq_termvar := String.string_dec.
@@ -29,7 +32,7 @@ value, v :: 'v_' ::=  {{ com values }}
   | { m }       :: :: Thunk
 %  | ( v )       ::S:: ParenV
 
-compt, m :: 'm_' ::=  {{ com comptutations }}
+compt, m :: 'm_' ::=  {{ com computations }}
   | split ( v , x1 , x2 , m )      ::  :: PairElim (+ bind x1 union x2 in m +)
   | case0 ( v )                    ::  :: NilElim
 % Should be x1.m1?
