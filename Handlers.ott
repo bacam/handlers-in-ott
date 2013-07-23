@@ -29,7 +29,7 @@ value, v :: 'v_' ::=  {{ com values }}
   | { m }       :: :: Thunk
 %  | ( v )       ::S:: ParenV
 
-comp, m :: 'm_' ::=  {{ com computations }}
+compt, m :: 'm_' ::=  {{ com comptutations }}
   | split ( v , x1 , x2 , m )      ::  :: PairElim (+ bind x1 union x2 in m +)
   | case0 ( v )                    ::  :: NilElim
 % Should be x1.m1?
@@ -46,9 +46,9 @@ comp, m :: 'm_' ::=  {{ com computations }}
   | oper v ( \ x . m )             ::  :: Op (+ bind x in m +)
   | handle m with h                ::  :: Handle
   | ( m )                          :: S:: ParenS   {{ icho [[m]] }}
-  | m [ v / x ]                    :: M:: Msub     {{ icho (subst_comp [[v]] [[x]] [[m]]) }}
-  | H . m                          :: M:: MctxH    {{ icho (appctx_hoisting_frame_comp [[H]] [[m]]) }}
-  | CC . m                         :: M:: MctxC    {{ icho (appctx_comp_frame_comp [[CC]] [[m]]) }}
+  | m [ v / x ]                    :: M:: Msub     {{ icho (subst_compt [[v]] [[x]] [[m]]) }}
+  | H . m                          :: M:: MctxH    {{ icho (appctx_hoisting_frame_compt [[H]] [[m]]) }}
+  | CC . m                         :: M:: MctxC    {{ icho (appctx_compt_frame_compt [[CC]] [[m]]) }}
 
 % Can I make it a proper set rather than a list?
 handlers, h :: 'h_' ::=  {{ com handlers }}
@@ -62,7 +62,7 @@ hoisting_frame, H :: 'H_' ::=
   | prjr __           :: :: ProjR
 
 % Can I avoid duplicating H?
-comp_frame, CC :: 'CC_' ::=
+compt_frame, CC :: 'CC_' ::=
   | let x <- __ in m  :: :: Let (+ bind x in m +)
   | __ v              :: :: App
   | prjl __           :: :: ProjL

@@ -7,20 +7,20 @@ begin
    inductify option doesn't seem to work here.) *)
 
 inductive
-ind_appctx_H_m :: "hoisting_frame \<Rightarrow> comp \<Rightarrow> comp \<Rightarrow> bool"
+ind_appctx_H_m :: "hoisting_frame \<Rightarrow> compt \<Rightarrow> compt \<Rightarrow> bool"
 where
 "ind_appctx_H_m (H_Let x m) m5 ((m_Let x m5 m))"
 | "ind_appctx_H_m (H_App v) m5 ((m_App m5 v))"
 | "ind_appctx_H_m H_ProjL m5 ((m_ProjL m5))"
 | "ind_appctx_H_m H_ProjR m5 ((m_ProjR m5))"
 
-lemma altH: "ind_appctx_H_m H m m' \<Longrightarrow> m' = appctx_hoisting_frame_comp H m"
+lemma altH: "ind_appctx_H_m H m m' \<Longrightarrow> m' = appctx_hoisting_frame_compt H m"
 apply (induct rule: ind_appctx_H_m.induct)
 apply simp_all
 done
 
 inductive
-ind_appctx_CC_m :: "comp_frame \<Rightarrow> comp \<Rightarrow> comp \<Rightarrow> bool"
+ind_appctx_CC_m :: "compt_frame \<Rightarrow> compt \<Rightarrow> compt \<Rightarrow> bool"
 where
 "ind_appctx_CC_m (CC_Let x m) m5 ((m_Let x m5 m))"
 | "ind_appctx_CC_m (CC_App v) m5 ((m_App m5 v))"
@@ -28,14 +28,14 @@ where
 | "ind_appctx_CC_m CC_ProjR m5 ((m_ProjR m5))"
 | "ind_appctx_CC_m (CC_Handle h) m5 ((m_Handle m5 h))"
 
-lemma altC: "ind_appctx_CC_m CC m m' \<Longrightarrow> m' = appctx_comp_frame_comp CC m"
+lemma altC: "ind_appctx_CC_m CC m m' \<Longrightarrow> m' = appctx_compt_frame_compt CC m"
 apply (induct rule: ind_appctx_CC_m.induct)
 apply simp_all
 done
 
 (* Do some reductions by hand. *)
 
-definition reduces1 :: "comp \<Rightarrow> comp \<Rightarrow> bool" where "reduces1 = reduce^**"
+definition reduces1 :: "compt \<Rightarrow> compt \<Rightarrow> bool" where "reduces1 = reduce^**"
 
 lemma "reduces1 (m_Force (v_Thunk m)) m"
   apply (simp add: reduces1_def)
@@ -49,7 +49,7 @@ done
 lemma frameApp: "reduce m m' \<Longrightarrow> reduce (m_App m v) (m_App m' v)"
 proof -
   assume "reduce m m'"
-  hence "reduce (appctx_comp_frame_comp (CC_App v) m) (appctx_comp_frame_comp (CC_App v) m')" apply (rule frameI) done
+  hence "reduce (appctx_compt_frame_compt (CC_App v) m) (appctx_compt_frame_compt (CC_App v) m')" apply (rule frameI) done
   thus "reduce (m_App m v) (m_App m' v)" by simp
 qed
 
@@ -206,8 +206,8 @@ proof -
   assume 1: "reduce (m) (m')"
   assume 2: "ind_appctx_CC_m CC m m1"
   assume 3: "ind_appctx_CC_m CC m' m2"
-  from 2 have 4: "m1 = appctx_comp_frame_comp CC m" by (rule altC)
-  from 3 have 5: "m2 = appctx_comp_frame_comp CC m'" by (rule altC)
+  from 2 have 4: "m1 = appctx_compt_frame_compt CC m" by (rule altC)
+  from 3 have 5: "m2 = appctx_compt_frame_compt CC m'" by (rule altC)
   from 1 4 5 frameI show ?thesis by simp
 qed
 
@@ -219,8 +219,8 @@ proof -
   assume 1: "\<not> (x : set (fv_hoisting_frame  H ))"
   assume 2: "ind_appctx_H_m  H (m_Op oper v x m) m1"
   assume 3: "ind_appctx_H_m  H m m2"
-  from 2 have 4: "m1 = appctx_hoisting_frame_comp H (m_Op oper v x m)" by (rule altH)
-  from 3 have 5: "m2 = appctx_hoisting_frame_comp H m" by (rule altH)
+  from 2 have 4: "m1 = appctx_hoisting_frame_compt H (m_Op oper v x m)" by (rule altH)
+  from 3 have 5: "m2 = appctx_hoisting_frame_compt H m" by (rule altH)
   from 1 4 5 hoistopI show ?thesis by simp
 qed
 
@@ -233,9 +233,9 @@ code_pred hfor .
 code_pred (modes: i \<Rightarrow> o \<Rightarrow> bool) reduce
   apply (induct rule: reduce.cases)
   apply (metis)+
-  apply (metis hoisting_frame.exhaust appctx_hoisting_frame_comp.simps ind_appctx_H_m.intros)
+  apply (metis hoisting_frame.exhaust appctx_hoisting_frame_compt.simps ind_appctx_H_m.intros)
   apply (metis)+
-  apply (metis comp_frame.exhaust appctx_comp_frame_comp.simps ind_appctx_CC_m.intros)
+  apply (metis compt_frame.exhaust appctx_compt_frame_compt.simps ind_appctx_CC_m.intros)
 done
 
 export_code reduce_i_o in SML file -
@@ -245,7 +245,7 @@ value "Predicate.the (reduce_i_o (outer (runState computation)))"
 values "{m. reduce (outer (runState computation)) m}"
 
 (* Reduce as much as possible *)
-inductive reduces :: "comp \<Rightarrow> comp \<Rightarrow> bool" where
+inductive reduces :: "compt \<Rightarrow> compt \<Rightarrow> bool" where
   "\<not>(\<exists>m'. reduce m m') \<Longrightarrow> reduces m m"
 | "reduce m m' \<Longrightarrow> reduces m' m'' \<Longrightarrow> reduces m m''"
 

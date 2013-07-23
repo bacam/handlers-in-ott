@@ -103,7 +103,7 @@ Qed.
 
 Lemma substitution: forall v A x,
   (forall G v' A', vtyp G v' A' -> Env x A G -> vtyp env_Nil v A -> vtyp (remove x G) (subst_value v x v') A') /\
-  (forall G e m C, ctyp G e m C -> Env x A G -> vtyp env_Nil v A -> ctyp (remove x G) e (subst_comp v x m) C) /\
+  (forall G e m C, ctyp G e m C -> Env x A G -> vtyp env_Nil v A -> ctyp (remove x G) e (subst_compt v x m) C) /\
   (forall G h a e e' c, handle G h a e e' c -> Env x A G -> vtyp env_Nil v A -> handle (remove x G) (subst_handlers v x h) a e e' c).
 intros v A x.
 apply typ_comb_ind; eauto using vtyp, ctyp.
@@ -175,7 +175,7 @@ Qed.
 Lemma comp_substitution1: forall v A x E m C,
   ctyp (env_Cons env_Nil x A) E m C ->
   vtyp env_Nil v A ->
-  ctyp env_Nil E (subst_comp v x m) C.
+  ctyp env_Nil E (subst_compt v x m) C.
 intros. 
 cut (env_Nil = (remove x (env_Cons env_Nil x A))).
 intro EQ; rewrite EQ.
@@ -184,13 +184,13 @@ simpl. rewrite eq_termvar_eq. reflexivity.
 Qed.
 
 Scheme value_ind := Induction for value Sort Prop
-  with comp_ind := Induction for comp Sort Prop
+  with comp_ind := Induction for compt Sort Prop
   with handlers_ind := Induction for handlers Sort Prop.
 Combined Scheme term_ind from value_ind, comp_ind, handlers_ind.
 
 Lemma double_subst: forall v w x,
   (forall u, subst_value w x (subst_value v x u) = subst_value (subst_value w x v) x u) /\
-  (forall m, subst_comp w x (subst_comp v x m) = subst_comp (subst_value w x v) x m) /\
+  (forall m, subst_compt w x (subst_compt v x m) = subst_compt (subst_value w x v) x m) /\
   (forall h, subst_handlers w x (subst_handlers v x h) = subst_handlers (subst_value w x v) x h).
 intros v w x. apply term_ind; simpl; eauto; try congruence.
 * intros. destruct (eq_termvar x0 x); subst; simpl; auto. rewrite eq_termvar_neq; auto.
@@ -218,13 +218,13 @@ Qed.
 
 Lemma fresh_subst: forall w x,
   (forall G v A, vtyp G v A -> (forall A', not (Env x A' G)) -> subst_value w x v = v) /\
-  (forall G E m C, ctyp G E m C -> (forall A', not (Env x A' G)) -> subst_comp w x m = m) /\
+  (forall G E m C, ctyp G E m C -> (forall A', not (Env x A' G)) -> subst_compt w x m = m) /\
   (forall G h A E E' C, handle G h A E E' C -> (forall A', not (Env x A' G)) -> subst_handlers w x h = h).
 intros w x.
 apply typ_comb_ind; simpl; intros;
 repeat match goal with |- context [ eq_termvar ?x ?y ] => destruct (eq_termvar x y); subst end;
 repeat match goal with H1 : _ -> subst_value _ _ _ = ?v1 |- _ => rewrite H1; auto end;
-repeat match goal with H1 : _ -> subst_comp _ _ _ = ?m1 |- _ => rewrite H1; auto end;
+repeat match goal with H1 : _ -> subst_compt _ _ _ = ?m1 |- _ => rewrite H1; auto end;
 repeat match goal with H1 : _ -> subst_handlers _ _ _ = ?h1 |- _ => rewrite H1; auto end;
 try congruence;
 auto using not_env_Cons.
@@ -241,7 +241,7 @@ Lemma comp_substitution2: forall v A x w B y E m C,
   ctyp (env_Cons (env_Cons env_Nil y B) x A) E m C ->
   vtyp env_Nil v A ->
   vtyp env_Nil w B ->
-  ctyp env_Nil E (subst_comp w y (subst_comp v x m)) C.
+  ctyp env_Nil E (subst_compt w y (subst_compt v x m)) C.
 intros.
 destruct (eq_termvar x y).
 * subst. rewrite (proj1 (proj2 (double_subst v w y))).
@@ -297,7 +297,7 @@ Qed.
 
 Lemma fv_in_env:
   (forall G v A', vtyp G v A' -> forall x, List.In x (fv_value v) -> exists A, Env x A G) /\
-  (forall G e m C, ctyp G e m C -> forall x, List.In x (fv_comp m) -> exists A, Env x A G) /\
+  (forall G e m C, ctyp G e m C -> forall x, List.In x (fv_compt m) -> exists A, Env x A G) /\
   (forall G h A' E E' C, handle G h A' E E' C -> forall x, List.In x (fv_handlers h) -> exists A, Env x A G).
 apply typ_comb_ind; eauto using adjust_extended_env1.
 * intros; subst. simpl in H0. inversion H0. subst. eexists; eassumption. case H1.
@@ -339,7 +339,7 @@ Qed.
 
 (* Note the extra case to deal with variable capture. *)
 
-Inductive progress_result : comp -> Prop :=
+Inductive progress_result : compt -> Prop :=
 | pr_canonical : forall m, canonical m -> progress_result m
 | pr_step : forall m m', reduce m m' -> progress_result m
 | pr_alpha : forall m, needs_alpha_conv m -> progress_result m.
@@ -433,8 +433,8 @@ intros E m C CTYP.
 assert (env_Nil = env_Nil) by reflexivity. revert CTYP H.
 generalize env_Nil at 1 2.
 induction 1; intro E1; subst; intros m'' RED; inversion RED; subst;
-match goal with H : appctx_hoisting_frame_comp ?HF _ = _ |- _ => destruct HF; simpl in H; simplify_eq H; intros; subst | _ => idtac end;
-match goal with H : appctx_comp_frame_comp ?CC _ = _ |- _ => destruct CC; simpl in H; simplify_eq H; intros; subst | _ => idtac end;
+match goal with H : appctx_hoisting_frame_compt ?HF _ = _ |- _ => destruct HF; simpl in H; simplify_eq H; intros; subst | _ => idtac end;
+match goal with H : appctx_compt_frame_compt ?CC _ = _ |- _ => destruct CC; simpl in H; simplify_eq H; intros; subst | _ => idtac end;
 simpl;
 try solve [eauto using ctyp | inversion H; subst; eauto using comp_substitution1, comp_substitution2].
 * inversion CTYP1; subst; eapply comp_substitution1; eauto.

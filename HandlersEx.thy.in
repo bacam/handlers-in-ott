@@ -2,7 +2,7 @@ theory HandlersEx
 imports Main Handlers
 begin
 
-definition computation :: comp where
+definition computation :: compt where
   "computation \<equiv> [[
      get () (\xx.
      put inl xx (\uu.
@@ -11,20 +11,20 @@ definition computation :: comp where
      get () (\zz.
      return zz))))) ]]"
 
-definition runState :: "comp \<Rightarrow> comp" where
+definition runState :: "compt \<Rightarrow> compt" where
   "runState \<equiv> \<lambda>m. [[
      handle m with
        { return xxx -> \st. (xxx,st)! }
      + { get xxx kk -> \st. ((kk! st) st) }
      + { put xxx kk -> \st. ((kk! ()) xxx) } ]]"
 
-definition outer :: "comp \<Rightarrow> comp" where
+definition outer :: "compt \<Rightarrow> compt" where
   "outer \<equiv> \<lambda>m. [[ m inr () ]]"
 
-definition expectedResult :: comp where
+definition expectedResult :: compt where
   "expectedResult \<equiv> [[ ((inr (), inl inr ()) , (inr (), inl inr ()))! ]]"
 
-definition bad :: comp where
+definition bad :: compt where
   "bad \<equiv> [[ 
      let xx <- handle let yy <- get () (\xx. return xx) in return xx with
                  { return xxx -> return () }

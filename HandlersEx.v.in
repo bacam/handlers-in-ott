@@ -26,13 +26,13 @@ Definition runState := fun m => [[ handle m with { return xxx -> \st. (xxx,st)! 
 Definition outer := fun m => [[ m inr () ]].
 
 
-Inductive reds : comp -> comp -> Prop :=
+Inductive reds : compt -> compt -> Prop :=
 | r_zero : forall m, reds m m
 | r_step : forall m1 m2 m3, reduce m1 m2 -> reds m2 m3 -> reds m1 m3.
 
 Definition expectedResult := [[ ((inr (), inl inr ()) , (inr (), inl inr ()))! ]].
 
-Definition bad : comp :=
+Definition bad : compt :=
   [[ let xx <- handle let yy <- get () (\xx. return xx) in return xx with
                  { return xxx -> return () }
                + { get xxx kk -> return () } in
