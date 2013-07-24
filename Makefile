@@ -11,7 +11,7 @@ CoqGlobs=$(patsubst %.v,%.glob,$(CoqSources))
 
 .PHONY: all all-isa clean
 
-all: all-isa-ott all-coq
+all: all-isa-ott all-coq Handlers.pdf Types.pdf
 all-isa-ott: $(IsaOttTargets)
 all-coq-ott: $(CoqOttTargets)
 all-coq: all-coq-ott $(CoqVoTargets)
@@ -45,6 +45,9 @@ Handlers.tex: Handlers.ott
 	$(OTT) $^ -o $@
 Types.tex: Handlers.ott Types.ott
 	$(OTT) $^ -o $@
+
+%.pdf: %.tex
+	pdflatex $<
 
 %.thy: %.thy.in
 	$(OTT) $(filter %.ott,$^) -isa_filter $< $@
